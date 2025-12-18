@@ -25,6 +25,10 @@ def register(payload: schemas.UserCreate, db: Session = Depends(get_db)):
         password_hash=hash_password(payload.password),
     )
     db.add(user)
+    db.flush()
+
+    city = models.City(user_id=user.id)
+    db.add(city)
     db.commit()
     db.refresh(user)
     return user

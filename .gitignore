@@ -23,3 +23,6 @@ alembic/*.log
 
 # Docker
 *.log
+
+# Files
+COMMIT_RULES.md

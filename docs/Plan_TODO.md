@@ -51,9 +51,9 @@ Założenie: przeglądarka + backend.
 
 ## Dzień 5 — City: zapis i odczyt miasta
 
-- [ ] Endpoint: `GET /city` (zwraca grid + budynki + zasoby)
-- [ ] Endpoint: `POST /city/build` (stawia budynek na polu)
-- [ ] Walidacja: pole wolne, typ budynku dozwolony
+- [x] Endpoint: `GET /city` (zwraca grid + budynki + zasoby)
+- [x] Endpoint: `POST /city/build` (stawia budynek na polu)
+- [x] Walidacja: pole wolne, typ budynku dozwolony
       **Done:** z Postmana/Insomnii stawiasz budynek i widzisz go w `GET /city`.
 
 ## Dzień 6 — Produkcja zasobów (serwerowa, nie „fejk timer”)
