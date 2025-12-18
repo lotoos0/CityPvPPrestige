@@ -23,15 +23,15 @@ Założenie: przeglądarka + backend.
 
 ## Dzień 2 — Model danych (papier → schema)
 
-- [ ] Rozpisz encje (w `docs/DATA_MODEL.md`):
-  - User
-  - City (grid)
-  - Building (type, level, x, y)
-  - Resources (gold, pop, power)
-  - AttackLog (attacker, defender, result, prestige_delta, timestamp)
-  - Season (start/end)
+- [x] Rozpisz encje (w `docs/DATA_MODEL.md`):
+  - [x] User
+  - [x] City (grid)
+  - [x] Building (type, level, x, y)
+  - [x] Resources (gold, pop, power)
+  - [x] AttackLog (attacker, defender, result, prestige_delta, timestamp)
+  - [x] Season (start/end)
 
-- [ ] Ustal 7 budynków + ich efekty lvl1–lvl3 (proste liczby)
+- [x] Ustal 7 budynków + ich efekty lvl1–lvl3 (proste liczby)
       **Done:** tabela z parametrami budynków i zasobów.
 
 ## Dzień 3 — Backend: szkielet + DB + migracje
