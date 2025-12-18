@@ -36,10 +36,10 @@ Założenie: przeglądarka + backend.
 
 ## Dzień 3 — Backend: szkielet + DB + migracje
 
-- [ ] Backend start (FastAPI)
-- [ ] Postgres + docker compose dla backendu
-- [ ] Migracje (Alembic) lub prosty init schema
-- [ ] Endpoint healthcheck `/health`
+- [x] Backend start (FastAPI)
+- [x] Postgres + docker compose dla backendu
+- [x] Migracje (Alembic) lub prosty init schema
+- [x] Endpoint healthcheck `/health`
       **Done:** `docker compose up` i `/health` działa.
 
 ## Dzień 4 — Auth + User
