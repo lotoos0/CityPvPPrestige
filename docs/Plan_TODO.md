@@ -77,11 +77,11 @@ Założenie: przeglądarka + backend.
 
 ## Dzień 8 — Staty: Power i Defense z miasta
 
-- [ ] Na backendzie licz:
+- [x] Na backendzie licz:
   - `attack_power = sum(Barracks level bonus)`
   - `defense_power = attack_power + (Wall/Tower bonus)`
 
-- [ ] Endpoint `/stats`
+- [x] Endpoint `/stats`
 - [ ] Front pokazuje Attack/Defense
       **Done:** budynki realnie zmieniają siłę.
 

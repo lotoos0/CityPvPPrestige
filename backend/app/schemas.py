@@ -45,3 +45,8 @@ class BuildRequest(BaseModel):
     type: str
     x: int
     y: int
+
+
+class StatsOut(BaseModel):
+    attack_power: int
+    defense_power: int
