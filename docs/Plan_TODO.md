@@ -44,9 +44,9 @@ Założenie: przeglądarka + backend.
 
 ## Dzień 4 — Auth + User
 
-- [ ] Rejestracja / login (JWT)
-- [ ] Tabela users
-- [ ] Endpoint `/me`
+- [x] Rejestracja / login (JWT)
+- [x] Tabela users
+- [x] Endpoint `/me`
       **Done:** możesz stworzyć konto, zalogować się, dostać `me`.
 
 ## Dzień 5 — City: zapis i odczyt miasta

@@ -1,6 +1,10 @@
 from fastapi import FastAPI
 
+from app.routes import auth
+
 app = FastAPI(title="CityPvPPrestige API")
+
+app.include_router(auth.router)
 
 
 @app.get("/")
