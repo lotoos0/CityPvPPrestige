@@ -58,12 +58,12 @@ Założenie: przeglądarka + backend.
 
 ## Dzień 6 — Produkcja zasobów (serwerowa, nie „fejk timer”)
 
-- [ ] Dodaj `last_collected_at`
-- [ ] Endpoint: `POST /city/collect`
+- [x] Dodaj `last_collected_at`
+- [x] Endpoint: `POST /city/collect`
   - nalicza produkcję od ostatniego collect
   - aktualizuje zasoby
 
-- [ ] Prosty cap na gold (Storage)
+- [x] Prosty cap na gold (Storage)
       **Done:** mija czas → collect daje więcej gold.
 
 ## Dzień 7 — Frontend: minimalny UI (brzydkie, ale działa)
