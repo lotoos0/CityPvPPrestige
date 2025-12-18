@@ -68,11 +68,11 @@ Założenie: przeglądarka + backend.
 
 ## Dzień 7 — Frontend: minimalny UI (brzydkie, ale działa)
 
-- [ ] Login/register
-- [ ] Ekran miasta: grid 12×12 (proste kwadraty)
-- [ ] Klik na pole → buduj (dropdown 7 budynków)
-- [ ] Przycisk „Collect”
-- [ ] Wyświetl zasoby (gold/pop/power/prestige)
+- [x] Login/register
+- [x] Ekran miasta: grid 12×12 (proste kwadraty)
+- [x] Klik na pole → buduj (dropdown 7 budynków)
+- [x] Przycisk „Collect”
+- [x] Wyświetl zasoby (gold/pop/power/prestige)
       **Done:** da się grać w „stawiam, collectuję” z UI.
 
 ## Dzień 8 — Staty: Power i Defense z miasta
