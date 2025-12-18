@@ -9,6 +9,7 @@ const registerForm = document.getElementById("registerForm");
 const loginForm = document.getElementById("loginForm");
 const collectBtn = document.getElementById("collectBtn");
 const resourceStats = document.getElementById("resourceStats");
+const combatStats = document.getElementById("combatStats");
 const gridEl = document.getElementById("grid");
 const buildingType = document.getElementById("buildingType");
 const buildStatus = document.getElementById("buildStatus");
@@ -110,6 +111,18 @@ async function collectResources() {
   return response.json();
 }
 
+async function fetchStats() {
+  const response = await fetch(`${getApiBase()}/stats`, {
+    headers: { ...authHeaders() },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to load stats");
+  }
+
+  return response.json();
+}
+
 async function placeBuilding(payload) {
   const response = await fetch(`${getApiBase()}/city/build`, {
     method: "POST",
@@ -139,6 +152,21 @@ function renderStats(city) {
     row.className = "stat";
     row.innerHTML = `<span>${label}</span><strong>${value}</strong>`;
     resourceStats.appendChild(row);
+  });
+}
+
+function renderCombat(stats) {
+  combatStats.innerHTML = "";
+  const items = [
+    ["Attack", stats.attack_power],
+    ["Defense", stats.defense_power],
+  ];
+
+  items.forEach(([label, value]) => {
+    const row = document.createElement("div");
+    row.className = "stat";
+    row.innerHTML = `<span>${label}</span><strong>${value}</strong>`;
+    combatStats.appendChild(row);
   });
 }
 
@@ -172,9 +200,10 @@ function renderGrid(city) {
 
 async function refreshCity() {
   try {
-    const city = await fetchCity();
+    const [city, stats] = await Promise.all([fetchCity(), fetchStats()]);
     cityState = city;
     renderStats(city);
+    renderCombat(stats);
     renderGrid(city);
     collectBtn.disabled = false;
     setBuildStatus("Ready to build.");
@@ -201,6 +230,8 @@ async function handleBuild(x, y, existing) {
     cityState = updated;
     renderStats(updated);
     renderGrid(updated);
+    const stats = await fetchStats();
+    renderCombat(stats);
     setBuildStatus(`Placed ${type} at ${x},${y}.`);
   } catch (error) {
     setBuildStatus(error.message, true);
@@ -255,6 +286,8 @@ collectBtn.addEventListener("click", async () => {
     const updated = await collectResources();
     cityState = updated;
     renderStats(updated);
+    const stats = await fetchStats();
+    renderCombat(stats);
     setBuildStatus("Collected resources.");
   } catch (error) {
     setBuildStatus(error.message, true);
