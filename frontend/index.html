@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Prestige Wars - MVP</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="bg-glow"></div>
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Prestige Wars</p>
+          <h1>City Control Console</h1>
+        </div>
+        <div class="season-badge">Season 1 · Day 1/14</div>
+        <div class="topbar-actions">
+          <input
+            id="apiBase"
+            class="input"
+            placeholder="API base http://localhost:8000"
+            aria-label="API base"
+          />
+          <button id="saveApi" class="btn ghost">Save</button>
+        </div>
+      </header>
+
+      <section class="card auth" id="authSection">
+        <div class="auth-pane">
+          <h2>Create account</h2>
+          <form id="registerForm" class="form">
+            <input class="input" type="email" name="email" placeholder="email" required />
+            <input class="input" type="password" name="password" placeholder="password" required />
+            <button class="btn" type="submit">Register</button>
+          </form>
+        </div>
+        <div class="auth-pane">
+          <h2>Log in</h2>
+          <form id="loginForm" class="form">
+            <input class="input" type="email" name="email" placeholder="email" required />
+            <input class="input" type="password" name="password" placeholder="password" required />
+            <button class="btn" type="submit">Login</button>
+          </form>
+        </div>
+        <div class="auth-status">
+          <p id="authMessage">No active session.</p>
+          <button id="logoutBtn" class="btn ghost" disabled>Logout</button>
+        </div>
+      </section>
+
+      <section class="hud">
+        <div class="card">
+          <h2>Resources</h2>
+          <div class="stats" id="resourceStats"></div>
+          <button id="collectBtn" class="btn" disabled>Collect</button>
+        </div>
+        <div class="card">
+          <h2>Combat Stats</h2>
+          <div class="stats" id="combatStats"></div>
+          <p class="hint">Attack from Barracks, defense adds Wall/Tower.</p>
+        </div>
+        <div class="card">
+          <h2>Build</h2>
+          <label class="label" for="buildingType">Building type</label>
+          <select id="buildingType" class="input">
+            <option value="">Select building</option>
+            <option value="gold_mine">Gold Mine</option>
+            <option value="house">House</option>
+            <option value="power_plant">Power Plant</option>
+            <option value="barracks">Barracks</option>
+            <option value="wall">Wall</option>
+            <option value="tower">Tower</option>
+            <option value="storage">Storage</option>
+          </select>
+          <p class="hint">Click a tile to build. Level starts at 1.</p>
+          <div id="buildStatus" class="status"></div>
+        </div>
+      </section>
+
+      <section class="card city" aria-label="City grid">
+        <div class="city-header">
+          <h2>City Grid</h2>
+          <p class="hint">12x12. One building per tile.</p>
+        </div>
+        <div id="grid" class="grid"></div>
+      </section>
+
+      <section class="card ranking">
+        <div class="city-header">
+          <h2>Ranking</h2>
+          <p class="hint">Top 10 and your neighbors.</p>
+        </div>
+        <div class="ranking-grid">
+          <div>
+            <h3>Top 10</h3>
+            <div id="rankTop" class="ranking-list"></div>
+          </div>
+          <div>
+            <h3>Near You</h3>
+            <div id="rankNear" class="ranking-list"></div>
+          </div>
+        </div>
+        <div id="rankStatus" class="status"></div>
+      </section>
+
+      <section class="card history">
+        <div class="city-header">
+          <h2>Attack History</h2>
+          <p class="hint">Last 20 battles.</p>
+        </div>
+        <div id="attackLog" class="history-list"></div>
+        <div id="historyStatus" class="status"></div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
