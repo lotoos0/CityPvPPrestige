@@ -62,3 +62,10 @@ class AttackResult(BaseModel):
     defender_power: int
     prestige_delta_attacker: int
     prestige_delta_defender: int
+
+
+class RankEntry(BaseModel):
+    rank: int
+    user_id: UUID
+    email: EmailStr
+    prestige: int

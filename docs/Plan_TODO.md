@@ -111,10 +111,10 @@ Założenie: przeglądarka + backend.
 
 ## Dzień 11 — Ranking + „sąsiedzi”
 
-- [ ] Endpoint `GET /rank/top` (Top 10)
-- [ ] Endpoint `GET /rank/near` (±3 wokół Ciebie)
-- [ ] Front: ekran Rankingu
-- [ ] Front: przycisk „Attack” przy graczach z listy
+- [x] Endpoint `GET /rank/top` (Top 10)
+- [x] Endpoint `GET /rank/near` (±3 wokół Ciebie)
+- [x] Front: ekran Rankingu
+- [x] Front: przycisk „Attack” przy graczach z listy
       **Done:** pętla „ranking → atak” istnieje.
 
 ## Dzień 12 — Historia ataków (retencja)

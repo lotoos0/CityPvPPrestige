@@ -13,8 +13,12 @@ const combatStats = document.getElementById("combatStats");
 const gridEl = document.getElementById("grid");
 const buildingType = document.getElementById("buildingType");
 const buildStatus = document.getElementById("buildStatus");
+const rankTop = document.getElementById("rankTop");
+const rankNear = document.getElementById("rankNear");
+const rankStatus = document.getElementById("rankStatus");
 
 let cityState = null;
+let currentUser = null;
 
 function getApiBase() {
   return localStorage.getItem(API_KEY) || "http://localhost:8000";
@@ -123,6 +127,18 @@ async function fetchStats() {
   return response.json();
 }
 
+async function fetchMe() {
+  const response = await fetch(`${getApiBase()}/auth/me`, {
+    headers: { ...authHeaders() },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to load user profile");
+  }
+
+  return response.json();
+}
+
 async function placeBuilding(payload) {
   const response = await fetch(`${getApiBase()}/city/build`, {
     method: "POST",
@@ -133,6 +149,45 @@ async function placeBuilding(payload) {
   if (!response.ok) {
     const detail = await response.json().catch(() => ({}));
     throw new Error(detail.detail || "Build failed");
+  }
+
+  return response.json();
+}
+
+async function fetchRankTop() {
+  const response = await fetch(`${getApiBase()}/rank/top`, {
+    headers: { ...authHeaders() },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to load top ranking");
+  }
+
+  return response.json();
+}
+
+async function fetchRankNear() {
+  const response = await fetch(`${getApiBase()}/rank/near`, {
+    headers: { ...authHeaders() },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to load near ranking");
+  }
+
+  return response.json();
+}
+
+async function attackPlayer(userId) {
+  const response = await fetch(`${getApiBase()}/pvp/attack`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({ defender_id: userId }),
+  });
+
+  if (!response.ok) {
+    const detail = await response.json().catch(() => ({}));
+    throw new Error(detail.detail || "Attack failed");
   }
 
   return response.json();
@@ -198,15 +253,55 @@ function renderGrid(city) {
   }
 }
 
+function renderRankList(container, entries) {
+  container.innerHTML = "";
+  entries.forEach((entry) => {
+    const row = document.createElement("div");
+    row.className = "rank-row";
+    row.innerHTML = `<span>#${entry.rank}</span><span>${entry.email}</span><span>${entry.prestige}</span>`;
+
+    const attackBtn = document.createElement("button");
+    attackBtn.className = "btn ghost";
+    attackBtn.textContent = "Attack";
+    attackBtn.disabled = entry.user_id === currentUser?.id;
+
+    attackBtn.addEventListener("click", async () => {
+      try {
+        const result = await attackPlayer(entry.user_id);
+        rankStatus.textContent = `Result: ${result.result} (Δ${result.prestige_delta_attacker})`;
+        await refreshCity();
+      } catch (error) {
+        rankStatus.textContent = error.message;
+      }
+    });
+
+    row.appendChild(attackBtn);
+    container.appendChild(row);
+  });
+}
+
+async function refreshRanking() {
+  try {
+    const [top, near] = await Promise.all([fetchRankTop(), fetchRankNear()]);
+    renderRankList(rankTop, top);
+    renderRankList(rankNear, near);
+    rankStatus.textContent = "";
+  } catch (error) {
+    rankStatus.textContent = error.message;
+  }
+}
+
 async function refreshCity() {
   try {
-    const [city, stats] = await Promise.all([fetchCity(), fetchStats()]);
+    const [city, stats, me] = await Promise.all([fetchCity(), fetchStats(), fetchMe()]);
     cityState = city;
+    currentUser = me;
     renderStats(city);
     renderCombat(stats);
     renderGrid(city);
     collectBtn.disabled = false;
     setBuildStatus("Ready to build.");
+    await refreshRanking();
   } catch (error) {
     collectBtn.disabled = true;
     setBuildStatus(error.message, true);
@@ -273,8 +368,11 @@ logoutBtn.addEventListener("click", () => {
   setToken(null);
   logoutBtn.disabled = true;
   cityState = null;
+  currentUser = null;
   gridEl.innerHTML = "";
   resourceStats.innerHTML = "";
+  rankTop.innerHTML = "";
+  rankNear.innerHTML = "";
   setMessage("Logged out.");
   setBuildStatus("");
   collectBtn.disabled = true;
