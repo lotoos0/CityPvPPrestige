@@ -305,7 +305,27 @@ function renderHistory(entries) {
 
     const item = document.createElement("div");
     item.className = "history-item";
-    item.innerHTML = `\n      <div>\n        <strong>${outcome} (${delta})</strong>\n        <span>${isAttacker ? "Attacked" : "Defended"} vs ${opponent} • ${entry.result}</span>\n      </div>\n      <span>${timestamp}</span>\n    `;\n    attackLog.appendChild(item);\n  });\n}\n\n+async function refreshHistory() {\n+  try {\n+    const entries = await fetchAttackLog();\n+    renderHistory(entries);\n+    historyStatus.textContent = \"\";\n+  } catch (error) {\n+    historyStatus.textContent = error.message;\n+  }\n+}\n+\n async function refreshRanking() {
+    item.innerHTML = `
+      <div>
+        <strong>${outcome} (${delta})</strong>
+        <span>${isAttacker ? "Attacked" : "Defended"} vs ${opponent} • ${entry.result}</span>
+      </div>
+      <span>${timestamp}</span>
+    `;
+    attackLog.appendChild(item);
+  });
+}
+
+async function refreshHistory() {
+  try {
+    const entries = await fetchAttackLog();
+    renderHistory(entries);
+    historyStatus.textContent = "";
+  } catch (error) {
+    historyStatus.textContent = error.message;
+  }
+}
+
 async function refreshRanking() {
   try {
     const [top, near] = await Promise.all([fetchRankTop(), fetchRankNear()]);
