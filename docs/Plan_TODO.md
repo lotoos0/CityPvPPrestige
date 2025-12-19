@@ -119,9 +119,9 @@ Założenie: przeglądarka + backend.
 
 ## Dzień 12 — Historia ataków (retencja)
 
-- [ ] Endpoint `GET /pvp/log`
-- [ ] Front: lista ostatnich ataków (kto, wynik, delta prestiżu, kiedy)
-- [ ] Front: komunikat „spadłeś / wzrosłeś”
+- [x] Endpoint `GET /pvp/log`
+- [x] Front: lista ostatnich ataków (kto, wynik, delta prestiżu, kiedy)
+- [x] Front: komunikat „spadłeś / wzrosłeś”
       **Done:** gracz wie, co się dzieje i dlaczego.
 
 ## Dzień 13 — Sezon (wersja 1)

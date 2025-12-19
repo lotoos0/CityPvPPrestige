@@ -16,6 +16,8 @@ const buildStatus = document.getElementById("buildStatus");
 const rankTop = document.getElementById("rankTop");
 const rankNear = document.getElementById("rankNear");
 const rankStatus = document.getElementById("rankStatus");
+const attackLog = document.getElementById("attackLog");
+const historyStatus = document.getElementById("historyStatus");
 
 let cityState = null;
 let currentUser = null;
@@ -193,6 +195,18 @@ async function attackPlayer(userId) {
   return response.json();
 }
 
+async function fetchAttackLog() {
+  const response = await fetch(`${getApiBase()}/pvp/log`, {
+    headers: { ...authHeaders() },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to load attack log");
+  }
+
+  return response.json();
+}
+
 function renderStats(city) {
   resourceStats.innerHTML = "";
   const stats = [
@@ -280,6 +294,18 @@ function renderRankList(container, entries) {
   });
 }
 
+function renderHistory(entries) {
+  attackLog.innerHTML = "";
+  entries.forEach((entry) => {
+    const isAttacker = entry.attacker_id === currentUser?.id;
+    const opponent = isAttacker ? entry.defender_email : entry.attacker_email;
+    const delta = isAttacker ? entry.prestige_delta_attacker : entry.prestige_delta_defender;
+    const outcome = delta >= 0 ? "Prestige up" : "Prestige down";
+    const timestamp = new Date(entry.created_at).toLocaleString();
+
+    const item = document.createElement("div");
+    item.className = "history-item";
+    item.innerHTML = `\n      <div>\n        <strong>${outcome} (${delta})</strong>\n        <span>${isAttacker ? "Attacked" : "Defended"} vs ${opponent} • ${entry.result}</span>\n      </div>\n      <span>${timestamp}</span>\n    `;\n    attackLog.appendChild(item);\n  });\n}\n\n+async function refreshHistory() {\n+  try {\n+    const entries = await fetchAttackLog();\n+    renderHistory(entries);\n+    historyStatus.textContent = \"\";\n+  } catch (error) {\n+    historyStatus.textContent = error.message;\n+  }\n+}\n+\n async function refreshRanking() {
 async function refreshRanking() {
   try {
     const [top, near] = await Promise.all([fetchRankTop(), fetchRankNear()]);
@@ -301,7 +327,7 @@ async function refreshCity() {
     renderGrid(city);
     collectBtn.disabled = false;
     setBuildStatus("Ready to build.");
-    await refreshRanking();
+    await Promise.all([refreshRanking(), refreshHistory()]);
   } catch (error) {
     collectBtn.disabled = true;
     setBuildStatus(error.message, true);
@@ -373,6 +399,7 @@ logoutBtn.addEventListener("click", () => {
   resourceStats.innerHTML = "";
   rankTop.innerHTML = "";
   rankNear.innerHTML = "";
+  attackLog.innerHTML = "";
   setMessage("Logged out.");
   setBuildStatus("");
   collectBtn.disabled = true;

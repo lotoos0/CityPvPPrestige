@@ -198,6 +198,30 @@ select {
   font-size: 12px;
 }
 
+.history-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.history-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.history-item strong {
+  color: var(--text);
+}
+
+.history-item span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
 .city {
   padding: 20px 20px 24px;
 }

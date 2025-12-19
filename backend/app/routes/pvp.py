@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, aliased
 
 from app import models, schemas
 from app.db import get_db
@@ -151,3 +151,41 @@ def attack(
         prestige_delta_attacker=attacker_delta,
         prestige_delta_defender=defender_delta,
     )
+
+
+@router.get("/log", response_model=list[schemas.AttackLogEntry])
+def log(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    attacker_alias = aliased(models.User)
+    defender_alias = aliased(models.User)
+    logs = (
+        db.query(models.AttackLog, attacker_alias, defender_alias)
+        .join(attacker_alias, models.AttackLog.attacker_id == attacker_alias.id)
+        .join(defender_alias, models.AttackLog.defender_id == defender_alias.id)
+        .filter(
+            (models.AttackLog.attacker_id == current_user.id)
+            | (models.AttackLog.defender_id == current_user.id)
+        )
+        .order_by(models.AttackLog.created_at.desc())
+        .limit(20)
+        .all()
+    )
+
+    results = []
+    for log_entry, attacker, defender in logs:
+        results.append(
+            schemas.AttackLogEntry(
+                id=log_entry.id,
+                attacker_id=attacker.id,
+                attacker_email=attacker.email,
+                defender_id=defender.id,
+                defender_email=defender.email,
+                result=log_entry.result,
+                prestige_delta_attacker=log_entry.prestige_delta_attacker,
+                prestige_delta_defender=log_entry.prestige_delta_defender,
+                created_at=log_entry.created_at,
+            )
+        )
+    return results

@@ -69,3 +69,15 @@ class RankEntry(BaseModel):
     user_id: UUID
     email: EmailStr
     prestige: int
+
+
+class AttackLogEntry(BaseModel):
+    id: UUID
+    attacker_id: UUID
+    attacker_email: EmailStr
+    defender_id: UUID
+    defender_email: EmailStr
+    result: str
+    prestige_delta_attacker: int
+    prestige_delta_defender: int
+    created_at: datetime
