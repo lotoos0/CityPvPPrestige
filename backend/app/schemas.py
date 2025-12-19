@@ -81,3 +81,12 @@ class AttackLogEntry(BaseModel):
     prestige_delta_attacker: int
     prestige_delta_defender: int
     created_at: datetime
+
+
+class SeasonOut(BaseModel):
+    id: UUID
+    number: int
+    starts_at: datetime
+    ends_at: datetime
+    is_active: bool
+    model_config = ConfigDict(from_attributes=True)

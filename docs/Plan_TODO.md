@@ -126,10 +126,10 @@ Założenie: przeglądarka + backend.
 
 ## Dzień 13 — Sezon (wersja 1)
 
-- [ ] Tabela Season + start/end
-- [ ] Komenda admin / endpoint do startu nowego sezonu (na MVP ręcznie)
-- [ ] „Reset prestiżu do 1000” dla wszystkich przy rollover
-- [ ] Front: licznik sezonu (nawet statyczny)
+- [x] Tabela Season + start/end
+- [x] Komenda admin / endpoint do startu nowego sezonu (na MVP ręcznie)
+- [x] „Reset prestiżu do 1000” dla wszystkich przy rollover
+- [x] Front: licznik sezonu (nawet statyczny)
       **Done:** potrafisz odpalić reset i ranking startuje od nowa.
 
 ## Dzień 14 — Stabilizacja + test „czy to jest gra?”

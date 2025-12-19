@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routes import auth, city, stats, pvp, rank
+from app.routes import auth, city, stats, pvp, rank, season
 
 app = FastAPI(title="CityPvPPrestige API")
 
@@ -18,6 +18,7 @@ app.include_router(city.router)
 app.include_router(stats.router)
 app.include_router(pvp.router)
 app.include_router(rank.router)
+app.include_router(season.router)
 
 
 @app.get("/")
