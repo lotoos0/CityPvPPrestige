@@ -26,3 +26,6 @@ alembic/*.log
 
 # Files
 COMMIT_RULES.md
+
+# Agent notes
+AGENT_NOTES.md
