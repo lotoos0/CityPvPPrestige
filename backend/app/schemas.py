@@ -60,3 +60,5 @@ class AttackResult(BaseModel):
     result: str
     attacker_power: int
     defender_power: int
+    prestige_delta_attacker: int
+    prestige_delta_defender: int

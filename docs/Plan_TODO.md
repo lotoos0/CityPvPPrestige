@@ -100,13 +100,13 @@ Założenie: przeglądarka + backend.
 
 ## Dzień 10 — Prestiż (model prosty i czytelny)
 
-- [ ] Implementuj ELO-light (na start):
+- [x] Implementuj ELO-light (na start):
   - win vs wyżej: +30
   - win vs niżej: +10
   - lose vs wyżej: -10
   - lose vs niżej: -25
 
-- [ ] Aktualizacja prestiżu obu stron (opcjonalnie tylko atakującego w MVP, ale lepiej obu)
+- [x] Aktualizacja prestiżu obu stron (opcjonalnie tylko atakującego w MVP, ale lepiej obu)
       **Done:** ataki realnie ruszają ranking.
 
 ## Dzień 11 — Ranking + „sąsiedzi”

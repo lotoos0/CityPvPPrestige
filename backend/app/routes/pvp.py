@@ -47,6 +47,13 @@ def compute_stats(buildings: list[models.Building]) -> tuple[int, int]:
     return attack, defense
 
 
+def compute_prestige_delta(my_prestige: int, opponent_prestige: int, result: str) -> int:
+    opponent_higher = opponent_prestige > my_prestige
+    if result == "win":
+        return 30 if opponent_higher else 10
+    return -10 if opponent_higher else -25
+
+
 def get_attackers_today(db: Session, attacker_id: UUID, now: datetime) -> int:
     day_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
     return (
@@ -116,12 +123,23 @@ def attack(
 
     result = "win" if attack_effective >= defense_effective else "lose"
 
+    attacker_delta = compute_prestige_delta(
+        attacker_city.prestige, defender_city.prestige, result
+    )
+    defender_result = "lose" if result == "win" else "win"
+    defender_delta = compute_prestige_delta(
+        defender_city.prestige, attacker_city.prestige, defender_result
+    )
+
+    attacker_city.prestige += attacker_delta
+    defender_city.prestige += defender_delta
+
     log = models.AttackLog(
         attacker_id=current_user.id,
         defender_id=defender.id,
         result=result,
-        prestige_delta_attacker=0,
-        prestige_delta_defender=0,
+        prestige_delta_attacker=attacker_delta,
+        prestige_delta_defender=defender_delta,
     )
     db.add(log)
     db.commit()
@@ -130,4 +148,6 @@ def attack(
         result=result,
         attacker_power=attack_power,
         defender_power=defense_power,
+        prestige_delta_attacker=attacker_delta,
+        prestige_delta_defender=defender_delta,
     )
