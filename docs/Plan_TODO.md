@@ -134,12 +134,12 @@ Założenie: przeglądarka + backend.
 
 ## Dzień 14 — Stabilizacja + test „czy to jest gra?”
 
-- [ ] Test scenariusza:
+- [x] Test scenariusza:
   - nowe konto → budowa → collect → atak → ranking → log
 
-- [ ] Napraw 5 największych bugów
-- [ ] README: jak odpalić lokalnie
-- [ ] Lista „Milestone 2” (gildie + mapa sektorów później)
+- [x] Napraw 5 największych bugów
+- [x] README: jak odpalić lokalnie
+- [x] Lista „Milestone 2” (gildie + mapa sektorów później)
       **Done:** ktoś obcy odpala i rozumie w 2 minuty „co tu się robi”.
 
 ---
