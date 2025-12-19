@@ -87,15 +87,15 @@ Założenie: przeglądarka + backend.
 
 ## Dzień 9 — PvP: endpoint ataku (1v1 asynchro)
 
-- [ ] Endpoint: `POST /pvp/attack {defender_id}`
-- [ ] Walidacja:
+- [x] Endpoint: `POST /pvp/attack {defender_id}`
+- [x] Walidacja:
   - cooldown 30 min na tego samego obrońcę
   - limit 20 ataków/dzień
 
-- [ ] Wynik walki:
+- [x] Wynik walki:
   - porównanie attack vs defense + losowość ±10%
 
-- [ ] Zapisz AttackLog
+- [x] Zapisz AttackLog
       **Done:** możesz zaatakować, dostać wynik, zapis w DB.
 
 ## Dzień 10 — Prestiż (model prosty i czytelny)

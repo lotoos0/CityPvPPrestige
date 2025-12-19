@@ -50,3 +50,13 @@ class BuildRequest(BaseModel):
 class StatsOut(BaseModel):
     attack_power: int
     defense_power: int
+
+
+class AttackRequest(BaseModel):
+    defender_id: UUID
+
+
+class AttackResult(BaseModel):
+    result: str
+    attacker_power: int
+    defender_power: int
