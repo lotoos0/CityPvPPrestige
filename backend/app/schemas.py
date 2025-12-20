@@ -102,6 +102,13 @@ class PvPCooldownsOut(BaseModel):
     same_target_available_at: Optional[datetime] = None
 
 
+class PvPLimitsResponseOut(BaseModel):
+    limits: PvpLimitsOut
+    nightly_decay: Optional[int] = None
+    nightly_decay_applied_at: Optional[datetime] = None
+    cooldowns: Optional[PvPCooldownsOut] = None
+
+
 class PvPAttackResponseOut(BaseModel):
     battle_id: UUID
     attacker_id: UUID

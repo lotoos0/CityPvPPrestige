@@ -333,7 +333,7 @@ def attack(
     return response_payload
 
 
-@router.get("/limits", response_model=schemas.PvpLimitsOut)
+@router.get("/limits", response_model=schemas.PvPLimitsResponseOut)
 def limits(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
@@ -346,7 +346,7 @@ def limits(
     prestige_gain = stats.prestige_gain if stats else 0
     prestige_loss = stats.prestige_loss if stats else 0
 
-    return schemas.PvpLimitsOut(
+    limits_out = schemas.PvpLimitsOut(
         attacks_used=attacks_used,
         attacks_left=max(0, DAILY_ATTACK_LIMIT - attacks_used),
         prestige_gain_today=prestige_gain,
@@ -355,6 +355,8 @@ def limits(
         prestige_loss_left=max(0, PRESTIGE_LOSS_CAP - prestige_loss),
         reset_at=get_reset_at(now),
     )
+
+    return schemas.PvPLimitsResponseOut(limits=limits_out)
 
 
 @router.get("/log", response_model=list[schemas.AttackLogEntry])
