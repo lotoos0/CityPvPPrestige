@@ -144,3 +144,98 @@ Decay is minimal for active players and increases with inactivity."
 
 History/log entry:
 "System: Nightly soft-decay -{X} prestige"
+
+---
+
+## UI Messaging - PvP Limits & Caps (MVP)
+
+Purpose: clearly communicate PvP limits and prestige caps to prevent
+confusion and perceived unfairness. Messages are informational, not punitive.
+
+---
+
+### 1) Approaching Daily Attack Limit
+
+**Trigger:**
+- When remaining daily attacks <= 2
+
+**UI Message (non-blocking):**
+"Approaching daily PvP limit: {remaining}/{ATTACKS_PER_DAY_LIMIT} attacks left."
+
+**Tooltip / Info:**
+"Daily PvP limits reset at 00:00 server time."
+
+---
+
+### 2) Daily Attack Limit Reached
+
+**Trigger:**
+- Player attempts to start a PvP battle after reaching ATTACKS_PER_DAY_LIMIT
+
+**UI Message (blocking):**
+"Daily PvP limit reached. Resets at 00:00 server time."
+
+**CTA:**
+"Check ranking" / "Upgrade city"
+
+---
+
+### 3) Approaching Prestige Gain Cap
+
+**Trigger:**
+- Remaining prestige gain for the day <= 50
+
+**UI Message (non-blocking):**
+"Approaching daily prestige gain cap."
+
+**Tooltip / Info:**
+"Further wins today will grant reduced or no prestige.
+Limits reset at 00:00 server time."
+
+---
+
+### 4) Prestige Gain Cap Reached
+
+**Trigger:**
+- prestige_gain_today >= PRESTIGE_GAIN_PER_DAY_CAP
+
+**UI Message (non-blocking):**
+"Daily prestige gain cap reached."
+
+**Tooltip / Info:**
+"You can still fight battles, but additional prestige
+will be available after the daily reset."
+
+---
+
+### 5) Prestige Loss Cap Reached
+
+**Trigger:**
+- prestige_loss_today >= PRESTIGE_LOSS_PER_DAY_CAP
+
+**UI Message (informational):**
+"Daily prestige loss cap reached. Further losses are protected."
+
+**Tooltip / Info:**
+"Loss protection resets at 00:00 server time."
+
+---
+
+### 6) Nightly Soft-Decay Notification (Reference)
+
+**Trigger:**
+- First login after nightly reset AND decay_amount > 0
+
+**UI Banner:**
+"Nightly decay applied: -{decay_amount} prestige."
+
+**Tooltip / Info:**
+"Soft-decay trims excess prestige above the seasonal threshold.
+Inactivity accelerates decay."
+
+---
+
+## UX Rules
+- Never stack multiple blocking messages at once.
+- Prefer tooltips for explanations; banners for state changes.
+- All limits and caps must reference the daily reset time explicitly.

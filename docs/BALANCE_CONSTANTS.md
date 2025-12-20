@@ -64,3 +64,11 @@ Town Hall is defined explicitly (see PVP and metadata docs).
 ## Daily Reset
 
 - DAILY_RESET_TIME: 00:00 (server time)
+
+---
+
+## MVP Validation Note
+
+Caps, cooldowns, and soft-decay were validated against
+casual / regular / grinder scenarios and are locked for MVP.
+Adjust only after telemetry review.
