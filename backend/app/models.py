@@ -8,12 +8,14 @@ from sqlalchemy import (
     Float,
     ForeignKey,
     Integer,
+    Index,
     JSON,
     String,
     UniqueConstraint,
     func,
     text,
 )
+from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.db import Base
@@ -143,3 +145,62 @@ class PvpIdempotency(Base):
     response_json = Column(JSON, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class UnitType(Base):
+    __tablename__ = "unit_types"
+
+    id = Column(Integer, primary_key=True)
+    code = Column(String(32), nullable=False, unique=True)
+    name = Column(String(64), nullable=False)
+    attack = Column(Integer, nullable=False)
+    defense = Column(Integer, nullable=False)
+    train_time_sec = Column(Integer, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    __table_args__ = (Index("ix_unit_types_code", "code"),)
+
+
+class UserUnit(Base):
+    __tablename__ = "user_units"
+
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    unit_type_id = Column(Integer, ForeignKey("unit_types.id", ondelete="RESTRICT"), primary_key=True)
+    qty = Column(Integer, server_default=text("0"), nullable=False)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    unit_type = relationship("UnitType")
+
+
+class UserBuilding(Base):
+    __tablename__ = "user_buildings"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    building_type = Column(String(32), nullable=False)
+    level = Column(Integer, server_default=text("1"), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "building_type", name="uq_user_buildings_user_type"),
+        Index("ix_user_buildings_user_id", "user_id"),
+    )
+
+
+class TrainingJob(Base):
+    __tablename__ = "training_jobs"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    unit_type_id = Column(Integer, ForeignKey("unit_types.id", ondelete="RESTRICT"), nullable=False)
+    qty = Column(Integer, nullable=False)
+    started_at = Column(DateTime(timezone=True), nullable=False)
+    completes_at = Column(DateTime(timezone=True), nullable=False)
+    status = Column(String(16), nullable=False)
+
+    unit_type = relationship("UnitType")
+
+    __table_args__ = (
+        Index("ix_training_jobs_user_id", "user_id"),
+        Index("ix_training_jobs_status", "status"),
+    )

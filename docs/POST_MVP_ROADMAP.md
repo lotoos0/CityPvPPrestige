@@ -2,6 +2,11 @@
 
 Purpose: keep focus and avoid scope creep.
 
+Current MVP scope note (Army system):
+- PvP requires minimum units (gate only).
+- Units are not consumed in PvP (no losses in MVP).
+- Barracks is ownership-based, not city-grid placement.
+
 1) Guilds (limited)
 - Roles + basic chat
 - Shared seasonal goals
