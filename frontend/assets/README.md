@@ -6,3 +6,4 @@ Guidelines:
 - Keep source files organized by type (e.g., buildings/, ui/, icons/).
 - Prefer lossless formats for sources (e.g., PNG).
 - Do not place build outputs here.
+- No generated atlases in this directory.

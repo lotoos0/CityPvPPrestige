@@ -105,6 +105,8 @@ GLOBAL_COOLDOWN
 Nightly decay uses separate UI messages and is returned via: GET /pvp/limits
 (optional field) or user profile banner (implementation-specific).
 
+Note: result uses "loss" (not "lose") for consistency with common terminology.
+
 ---
 
 ## Error Responses (MVP)
