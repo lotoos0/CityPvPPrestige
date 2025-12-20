@@ -1,6 +1,6 @@
 """army unit types and training queue
 
-Revision ID: 0004_units_barracks_training_queue
+Revision ID: 0004_units_barracks
 Revises: 0003_pvp_idempotency
 Create Date: 2025-01-01 00:00:00.000000
 
@@ -15,7 +15,7 @@ from sqlalchemy.dialects import postgresql
 from sqlalchemy.sql import text
 
 # revision identifiers, used by Alembic.
-revision: str = "0004_units_barracks_training_queue"
+revision: str = "0004_units_barracks"
 down_revision: Union[str, None] = "0003_pvp_idempotency"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
