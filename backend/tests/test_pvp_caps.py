@@ -58,6 +58,7 @@ def test_gain_clamp_applies_remaining_only():
     attacker_id = register_user(client, attacker_email, password)
     defender_id = register_user(client, defender_email, password)
     token = login_user(client, attacker_email, password)
+    seed_units(attacker_id, 10)
 
     today = datetime.now(SERVER_TZ).date()
     db = SessionLocal()
@@ -103,6 +104,7 @@ def test_loss_clamp_applies_remaining_only():
     attacker_id = register_user(client, attacker_email, password)
     defender_id = register_user(client, defender_email, password)
     token = login_user(client, attacker_email, password)
+    seed_units(attacker_id, 10)
 
     today = datetime.now(SERVER_TZ).date()
     db = SessionLocal()
@@ -149,12 +151,13 @@ async def test_parallel_attacks_increment_attacks_used():
     attacker_id = register_user(client, attacker_email, password)
     defender_id = register_user(client, defender_email, password)
     token = login_user(client, attacker_email, password)
+    seed_units(attacker_id, 10)
 
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as async_client:
         headers = {"Authorization": f"Bearer {token}"}
         limits_before = await async_client.get("/pvp/limits", headers=headers)
-        attacks_before = limits_before.json()["attacks_used"]
+        attacks_before = limits_before.json()["limits"]["attacks_used"]
 
         async def do_attack(key: str):
             return await async_client.post(
@@ -179,7 +182,7 @@ async def test_parallel_attacks_increment_attacks_used():
         assert r2.status_code == 200
 
         limits_after = await async_client.get("/pvp/limits", headers=headers)
-        attacks_after = limits_after.json()["attacks_used"]
+        attacks_after = limits_after.json()["limits"]["attacks_used"]
         assert attacks_after - attacks_before == 2
 
     cleanup_test_data(attacker_id, defender_id)
@@ -202,6 +205,24 @@ def cleanup_test_data(attacker_id, defender_id):
         ).delete()
         db.query(models.City).filter(models.City.user_id.in_([attacker_id, defender_id])).delete()
         db.query(models.User).filter(models.User.id.in_([attacker_id, defender_id])).delete()
+        db.commit()
+    finally:
+        db.close()
+
+
+def seed_units(user_id, qty):
+    db = SessionLocal()
+    try:
+        unit_type = db.query(models.UnitType).filter(models.UnitType.code == "raider").first()
+        if not unit_type:
+            raise AssertionError("Unit type 'raider' missing")
+        db.add(
+            models.UserUnit(
+                user_id=user_id,
+                unit_type_id=unit_type.id,
+                qty=qty,
+            )
+        )
         db.commit()
     finally:
         db.close()

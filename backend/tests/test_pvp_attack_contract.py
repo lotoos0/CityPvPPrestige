@@ -36,6 +36,7 @@ def test_pvp_attack_matches_contract_shape() -> None:
     attacker_id = register_user(client, attacker_email, password)
     defender_id = register_user(client, defender_email, password)
     token = login_user(client, attacker_email, password)
+    seed_units(attacker_id, 10)
 
     key = str(uuid.uuid4())
     response = client.post(
@@ -87,6 +88,24 @@ def cleanup_test_data(attacker_id, defender_id):
         ).delete()
         db.query(models.City).filter(models.City.user_id.in_([attacker_id, defender_id])).delete()
         db.query(models.User).filter(models.User.id.in_([attacker_id, defender_id])).delete()
+        db.commit()
+    finally:
+        db.close()
+
+
+def seed_units(user_id, qty):
+    db = SessionLocal()
+    try:
+        unit_type = db.query(models.UnitType).filter(models.UnitType.code == "raider").first()
+        if not unit_type:
+            raise AssertionError("Unit type 'raider' missing")
+        db.add(
+            models.UserUnit(
+                user_id=user_id,
+                unit_type_id=unit_type.id,
+                qty=qty,
+            )
+        )
         db.commit()
     finally:
         db.close()
