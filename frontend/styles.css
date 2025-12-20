@@ -225,6 +225,30 @@ select {
   color: var(--muted);
 }
 
+.row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 8px 0;
+}
+
+.list {
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  min-height: 40px;
+}
+
+.bad {
+  color: #ff6b6b;
+}
+
+.good {
+  color: #7cfc90;
+}
+
 .ranking-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));

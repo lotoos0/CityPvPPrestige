@@ -86,6 +86,37 @@
           </div>
           <div id="pvpStatus" class="status"></div>
         </div>
+        <div class="card" id="army-card">
+          <h2>Army</h2>
+          <div class="row">
+            <button id="army-refresh" class="btn ghost" disabled>Refresh</button>
+            <span id="army-status" class="status"></span>
+          </div>
+          <div id="army-units" class="list"></div>
+        </div>
+        <div class="card" id="barracks-card">
+          <h2>Barracks</h2>
+          <div class="row">
+            <label>
+              Unit:
+              <select id="train-unit" class="input">
+                <option value="raider">Raider</option>
+                <option value="guardian">Guardian</option>
+              </select>
+            </label>
+            <label>
+              Qty:
+              <input id="train-qty" class="input" type="number" min="1" max="1000" value="10" />
+            </label>
+            <button id="train-submit" class="btn">Train</button>
+          </div>
+          <div class="row">
+            <button id="queue-refresh" class="btn ghost">Refresh Queue</button>
+            <button id="claim-submit" class="btn ghost">Claim</button>
+            <span id="barracks-status" class="status"></span>
+          </div>
+          <div id="barracks-queue" class="list"></div>
+        </div>
         <div class="card">
           <h2>Build</h2>
           <label class="label" for="buildingType">Building type</label>

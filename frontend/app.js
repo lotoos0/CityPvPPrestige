@@ -27,10 +27,21 @@ const pvpLossRow = document.getElementById("pvpLossRow");
 const pvpGlobalCooldown = document.getElementById("pvpGlobalCooldown");
 const pvpTargetCooldown = document.getElementById("pvpTargetCooldown");
 const pvpStatus = document.getElementById("pvpStatus");
+const armyRefreshBtn = document.getElementById("army-refresh");
+const armyStatus = document.getElementById("army-status");
+const armyUnits = document.getElementById("army-units");
+const trainUnit = document.getElementById("train-unit");
+const trainQty = document.getElementById("train-qty");
+const trainSubmit = document.getElementById("train-submit");
+const queueRefreshBtn = document.getElementById("queue-refresh");
+const claimSubmit = document.getElementById("claim-submit");
+const barracksStatus = document.getElementById("barracks-status");
+const barracksQueue = document.getElementById("barracks-queue");
 
 let cityState = null;
 let currentUser = null;
 let pvpRefreshTimer = null;
+let armyRefreshTimer = null;
 
 function getApiBase() {
   return localStorage.getItem(API_KEY) || "http://localhost:8000";
@@ -63,6 +74,30 @@ function idempotencyKey() {
     return crypto.randomUUID();
   }
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+async function apiGet(path) {
+  const response = await fetch(`${getApiBase()}${path}`, {
+    headers: { ...authHeaders() },
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw { status: response.status, data };
+  }
+  return data;
+}
+
+async function apiPost(path, body) {
+  const response = await fetch(`${getApiBase()}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify(body || {}),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw { status: response.status, data };
+  }
+  return data;
 }
 
 function setMessage(message, isError = false) {
@@ -210,7 +245,7 @@ async function attackPlayer(userId) {
 
   if (!response.ok) {
     const detail = await response.json().catch(() => ({}));
-    throw new Error(detail.detail || "Attack failed");
+    throw { status: response.status, data: detail };
   }
 
   return response.json();
@@ -268,6 +303,137 @@ function formatDuration(seconds) {
 function setPvpStatus(message, isError = false) {
   pvpStatus.textContent = message;
   pvpStatus.style.color = isError ? "#ff8c6a" : "#9fb0c9";
+}
+
+function setArmyStatus(message, isError = false) {
+  armyStatus.textContent = message;
+  armyStatus.classList.remove("bad", "good");
+  if (message) {
+    armyStatus.classList.add(isError ? "bad" : "good");
+  }
+}
+
+function renderArmy(units) {
+  if (!units || units.length === 0) {
+    armyUnits.textContent = "No units.";
+    return;
+  }
+
+  armyUnits.innerHTML = units
+    .map((unit) => `<div>${unit.code}: <strong>${unit.qty}</strong></div>`)
+    .join("");
+}
+
+async function refreshArmy() {
+  setArmyStatus("Loading...");
+  try {
+    const data = await apiGet("/army");
+    renderArmy(data.units);
+    setArmyStatus("OK");
+  } catch (error) {
+    setArmyStatus(`Disconnected (${error.status || "?"})`, true);
+  }
+}
+
+function setBarracksStatus(message, isError = false) {
+  barracksStatus.textContent = message;
+  barracksStatus.classList.remove("bad", "good");
+  if (message) {
+    barracksStatus.classList.add(isError ? "bad" : "good");
+  }
+}
+
+function formatCountdown(iso) {
+  if (!iso) return "n/a";
+  const target = new Date(iso).getTime();
+  if (Number.isNaN(target)) return "n/a";
+  const seconds = Math.max(0, Math.floor((target - Date.now()) / 1000));
+  if (seconds === 0) return "Ready";
+  if (seconds < 60) return `${seconds}s`;
+  return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
+}
+
+function renderQueue(queue) {
+  if (!queue || !queue.status) {
+    barracksQueue.textContent = "Queue empty.";
+    return;
+  }
+  barracksQueue.innerHTML = `
+    <div>Status: <strong>${queue.status}</strong></div>
+    <div>Unit: <strong>${queue.unit_code}</strong>, qty: <strong>${queue.qty}</strong></div>
+    <div>Completes: <strong>${queue.completes_at || "?"}</strong> (${formatCountdown(
+      queue.completes_at
+    )})</div>
+  `;
+}
+
+async function refreshQueue() {
+  setBarracksStatus("Loading...");
+  try {
+    const data = await apiGet("/barracks/queue");
+    renderQueue(data);
+    setBarracksStatus("OK");
+  } catch (error) {
+    setBarracksStatus(`Disconnected (${error.status || "?"})`, true);
+  }
+}
+
+async function trainUnits() {
+  setBarracksStatus("Training...");
+  const unit = trainUnit.value;
+  const qty = parseInt(trainQty.value, 10);
+
+  try {
+    await apiPost("/barracks/train", { unit_code: unit, qty });
+    setBarracksStatus("Training started");
+    await refreshQueue();
+  } catch (error) {
+    if (error.status === 409) {
+      setBarracksStatus("Queue busy", true);
+      return;
+    }
+    setBarracksStatus(`Error (${error.status || "?"})`, true);
+  }
+}
+
+async function claimUnits() {
+  setBarracksStatus("Claiming...");
+  try {
+    const data = await apiPost("/barracks/claim");
+    if (!data.claimed) {
+      setBarracksStatus("Nothing to claim", true);
+      await refreshQueue();
+      return;
+    }
+    setBarracksStatus(`Claimed ${data.qty} ${data.unit_code}`);
+    await refreshQueue();
+    await refreshArmy();
+  } catch (error) {
+    setBarracksStatus(`Error (${error.status || "?"})`, true);
+  }
+}
+
+function startArmyHud() {
+  if (armyRefreshTimer) return;
+  armyRefreshBtn.disabled = false;
+  refreshArmy();
+  refreshQueue();
+  armyRefreshTimer = setInterval(() => {
+    refreshArmy();
+    refreshQueue();
+  }, 10000);
+}
+
+function stopArmyHud() {
+  if (armyRefreshTimer) {
+    clearInterval(armyRefreshTimer);
+    armyRefreshTimer = null;
+  }
+  armyRefreshBtn.disabled = true;
+  armyUnits.textContent = "No units.";
+  barracksQueue.textContent = "Queue empty.";
+  setArmyStatus("");
+  setBarracksStatus("");
 }
 
 function renderPvpHud(payload) {
@@ -421,7 +587,11 @@ function renderRankList(container, entries) {
         }
         await refreshCity();
       } catch (error) {
-        rankStatus.textContent = error.message;
+        if (error?.status === 403 && error?.data?.error?.code === "INSUFFICIENT_ARMY") {
+          rankStatus.textContent = "Train units in Barracks to attack.";
+        } else {
+          rankStatus.textContent = error?.data?.detail || error?.data?.message || "Attack failed";
+        }
       }
     });
 
@@ -484,6 +654,7 @@ async function refreshCity() {
     collectBtn.disabled = false;
     setBuildStatus("Ready to build.");
     startPvpHud();
+    startArmyHud();
     await Promise.all([refreshRanking(), refreshHistory()]);
   } catch (error) {
     collectBtn.disabled = true;
@@ -561,6 +732,7 @@ logoutBtn.addEventListener("click", () => {
   setBuildStatus("");
   collectBtn.disabled = true;
   stopPvpHud();
+  stopArmyHud();
 });
 
 collectBtn.addEventListener("click", async () => {
@@ -590,8 +762,25 @@ if (getToken()) {
   refreshCity();
 } else {
   stopPvpHud();
+  stopArmyHud();
 }
 
 pvpRefreshBtn.addEventListener("click", () => {
   refreshPvpHud();
+});
+
+armyRefreshBtn.addEventListener("click", () => {
+  refreshArmy();
+});
+
+queueRefreshBtn.addEventListener("click", () => {
+  refreshQueue();
+});
+
+trainSubmit.addEventListener("click", () => {
+  trainUnits();
+});
+
+claimSubmit.addEventListener("click", () => {
+  claimUnits();
 });
