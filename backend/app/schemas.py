@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Literal, Optional
 from uuid import UUID
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
@@ -119,6 +120,45 @@ class PvPAttackResponseOut(BaseModel):
     limits: PvpLimitsOut
     cooldowns: PvPCooldownsOut
     messages: list[MessageCode]
+
+
+class ArmyUnitOut(BaseModel):
+    code: str
+    qty: int = Field(ge=0)
+
+
+class ArmyOut(BaseModel):
+    units: list[ArmyUnitOut]
+
+
+class BarracksTrainIn(BaseModel):
+    unit_code: Literal["raider", "guardian"]
+    qty: int = Field(ge=1, le=1000)
+
+
+class BarracksTrainOut(BaseModel):
+    job_id: UUID
+    status: Literal["running"]
+    unit_code: str
+    qty: int
+    started_at: datetime
+    completes_at: datetime
+
+
+class BarracksQueueOut(BaseModel):
+    status: Optional[Literal["running", "done"]] = None
+    job_id: Optional[UUID] = None
+    unit_code: Optional[str] = None
+    qty: Optional[int] = None
+    started_at: Optional[datetime] = None
+    completes_at: Optional[datetime] = None
+
+
+class BarracksClaimOut(BaseModel):
+    claimed: bool
+    unit_code: Optional[str] = None
+    qty: Optional[int] = None
+    job_id: Optional[UUID] = None
 
 
 class RankEntry(BaseModel):
