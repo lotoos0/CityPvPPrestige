@@ -66,6 +66,26 @@
           <div class="stats" id="combatStats"></div>
           <p class="hint">Attack from Barracks, defense adds Wall/Tower.</p>
         </div>
+        <div class="card pvp-hud">
+          <div class="pvp-hud-header">
+            <div>
+              <h2>PvP Status</h2>
+              <p class="hint">Reset at <span id="pvpResetAt">--</span></p>
+            </div>
+            <button id="pvpRefreshBtn" class="btn ghost" disabled>Refresh</button>
+          </div>
+          <div id="pvpBanner" class="pvp-banner hidden"></div>
+          <div class="pvp-status">
+            <div class="pvp-row" id="pvpAttacksRow">Attacks: --</div>
+            <div class="pvp-row" id="pvpGainRow">Prestige gain: --</div>
+            <div class="pvp-row" id="pvpLossRow">Prestige loss: --</div>
+          </div>
+          <div class="pvp-cooldowns">
+            <div class="pvp-row" id="pvpGlobalCooldown">Global cooldown: --</div>
+            <div class="pvp-row" id="pvpTargetCooldown">Same target cooldown: --</div>
+          </div>
+          <div id="pvpStatus" class="status"></div>
+        </div>
         <div class="card">
           <h2>Build</h2>
           <label class="label" for="buildingType">Building type</label>

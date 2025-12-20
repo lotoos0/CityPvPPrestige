@@ -18,9 +18,19 @@ const rankNear = document.getElementById("rankNear");
 const rankStatus = document.getElementById("rankStatus");
 const attackLog = document.getElementById("attackLog");
 const historyStatus = document.getElementById("historyStatus");
+const pvpResetAt = document.getElementById("pvpResetAt");
+const pvpRefreshBtn = document.getElementById("pvpRefreshBtn");
+const pvpBanner = document.getElementById("pvpBanner");
+const pvpAttacksRow = document.getElementById("pvpAttacksRow");
+const pvpGainRow = document.getElementById("pvpGainRow");
+const pvpLossRow = document.getElementById("pvpLossRow");
+const pvpGlobalCooldown = document.getElementById("pvpGlobalCooldown");
+const pvpTargetCooldown = document.getElementById("pvpTargetCooldown");
+const pvpStatus = document.getElementById("pvpStatus");
 
 let cityState = null;
 let currentUser = null;
+let pvpRefreshTimer = null;
 
 function getApiBase() {
   return localStorage.getItem(API_KEY) || "http://localhost:8000";
@@ -46,6 +56,13 @@ function setToken(token) {
 function authHeaders() {
   const token = getToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+function idempotencyKey() {
+  if (crypto && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
 function setMessage(message, isError = false) {
@@ -183,7 +200,11 @@ async function fetchRankNear() {
 async function attackPlayer(userId) {
   const response = await fetch(`${getApiBase()}/pvp/attack`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", ...authHeaders() },
+    headers: {
+      "Content-Type": "application/json",
+      "Idempotency-Key": idempotencyKey(),
+      ...authHeaders(),
+    },
     body: JSON.stringify({ defender_id: userId }),
   });
 
@@ -205,6 +226,114 @@ async function fetchAttackLog() {
   }
 
   return response.json();
+}
+
+async function fetchPvPLimits() {
+  const response = await fetch(`${getApiBase()}/pvp/limits`, {
+    headers: { ...authHeaders() },
+  });
+
+  if (!response.ok) {
+    const detail = await response.json().catch(() => ({}));
+    throw new Error(detail.detail || "Failed to load PvP limits");
+  }
+
+  return response.json();
+}
+
+function formatResetAt(resetAt) {
+  if (!resetAt) return "unknown";
+  const date = new Date(resetAt);
+  if (Number.isNaN(date.getTime())) return "unknown";
+  return date.toLocaleString();
+}
+
+function secondsLeft(iso) {
+  if (!iso) return null;
+  const target = new Date(iso).getTime();
+  if (Number.isNaN(target)) return null;
+  const delta = Math.floor((target - Date.now()) / 1000);
+  return Math.max(0, delta);
+}
+
+function formatDuration(seconds) {
+  if (seconds === null) return "n/a";
+  if (seconds <= 0) return "Ready";
+  if (seconds < 60) return `Ready in ${seconds}s`;
+  const minutes = Math.floor(seconds / 60);
+  const remainder = seconds % 60;
+  return `Ready in ${minutes}m ${remainder}s`;
+}
+
+function setPvpStatus(message, isError = false) {
+  pvpStatus.textContent = message;
+  pvpStatus.style.color = isError ? "#ff8c6a" : "#9fb0c9";
+}
+
+function renderPvpHud(payload) {
+  if (!payload || !payload.limits) return;
+  const { limits, nightly_decay: nightlyDecay, cooldowns } = payload;
+
+  pvpResetAt.textContent = formatResetAt(limits.reset_at);
+
+  const resetTime = new Date(limits.reset_at).getTime();
+  if (Number.isFinite(resetTime) && resetTime < Date.now()) {
+    setPvpStatus("Time sync issue detected.", true);
+  } else {
+    setPvpStatus("");
+  }
+
+  if (nightlyDecay && nightlyDecay > 0) {
+    pvpBanner.textContent = `Nightly decay applied: -${nightlyDecay} prestige`;
+    pvpBanner.classList.remove("hidden");
+  } else {
+    pvpBanner.textContent = "";
+    pvpBanner.classList.add("hidden");
+  }
+
+  pvpAttacksRow.innerHTML = `Attacks: <strong>${limits.attacks_used}</strong> used / left <strong>${limits.attacks_left}</strong>`;
+  pvpGainRow.innerHTML = `Prestige gain today: <strong>${limits.prestige_gain_today}</strong> / left <strong>${limits.prestige_gain_left}</strong>`;
+  pvpLossRow.innerHTML = `Prestige loss today: <strong>${limits.prestige_loss_today}</strong> / protected left <strong>${limits.prestige_loss_left}</strong>`;
+
+  const globalLeft = secondsLeft(cooldowns?.global_available_at ?? null);
+  const targetLeft = secondsLeft(cooldowns?.same_target_available_at ?? null);
+
+  pvpGlobalCooldown.innerHTML = `Global cooldown: <strong>${formatDuration(globalLeft)}</strong>`;
+  pvpTargetCooldown.innerHTML = `Same target cooldown: <strong>${formatDuration(targetLeft)}</strong>`;
+}
+
+async function refreshPvpHud() {
+  try {
+    const payload = await fetchPvPLimits();
+    renderPvpHud(payload);
+    setPvpStatus("");
+  } catch (error) {
+    setPvpStatus(`Disconnected: ${error.message}`, true);
+  }
+}
+
+function startPvpHud() {
+  if (pvpRefreshTimer) return;
+  pvpRefreshBtn.disabled = false;
+  refreshPvpHud();
+  pvpRefreshTimer = setInterval(refreshPvpHud, 10000);
+}
+
+function stopPvpHud() {
+  if (pvpRefreshTimer) {
+    clearInterval(pvpRefreshTimer);
+    pvpRefreshTimer = null;
+  }
+  pvpRefreshBtn.disabled = true;
+  pvpResetAt.textContent = "--";
+  pvpBanner.textContent = "";
+  pvpBanner.classList.add("hidden");
+  pvpAttacksRow.textContent = "Attacks: --";
+  pvpGainRow.textContent = "Prestige gain: --";
+  pvpLossRow.textContent = "Prestige loss: --";
+  pvpGlobalCooldown.textContent = "Global cooldown: --";
+  pvpTargetCooldown.textContent = "Same target cooldown: --";
+  setPvpStatus("");
 }
 
 function renderStats(city) {
@@ -282,7 +411,14 @@ function renderRankList(container, entries) {
     attackBtn.addEventListener("click", async () => {
       try {
         const result = await attackPlayer(entry.user_id);
-        rankStatus.textContent = `Result: ${result.result} (Δ${result.prestige_delta_attacker})`;
+        rankStatus.textContent = `Result: ${result.result} (Δ${result.prestige.delta})`;
+        if (result.limits) {
+          renderPvpHud({
+            limits: result.limits,
+            cooldowns: result.cooldowns ?? null,
+            nightly_decay: null,
+          });
+        }
         await refreshCity();
       } catch (error) {
         rankStatus.textContent = error.message;
@@ -347,6 +483,7 @@ async function refreshCity() {
     renderGrid(city);
     collectBtn.disabled = false;
     setBuildStatus("Ready to build.");
+    startPvpHud();
     await Promise.all([refreshRanking(), refreshHistory()]);
   } catch (error) {
     collectBtn.disabled = true;
@@ -423,6 +560,7 @@ logoutBtn.addEventListener("click", () => {
   setMessage("Logged out.");
   setBuildStatus("");
   collectBtn.disabled = true;
+  stopPvpHud();
 });
 
 collectBtn.addEventListener("click", async () => {
@@ -450,4 +588,10 @@ setApiBase(getApiBase());
 if (getToken()) {
   logoutBtn.disabled = false;
   refreshCity();
+} else {
+  stopPvpHud();
 }
+
+pvpRefreshBtn.addEventListener("click", () => {
+  refreshPvpHud();
+});

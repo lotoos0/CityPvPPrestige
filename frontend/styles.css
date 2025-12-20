@@ -151,6 +151,50 @@ select {
   gap: 16px;
 }
 
+.pvp-hud-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.pvp-hud-header h2 {
+  margin-bottom: 6px;
+}
+
+.pvp-status,
+.pvp-cooldowns {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.pvp-row {
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.pvp-row strong {
+  color: var(--text);
+}
+
+.pvp-banner {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(245, 159, 0, 0.12);
+  border: 1px solid rgba(245, 159, 0, 0.4);
+  color: var(--text);
+  font-size: 13px;
+}
+
+.hidden {
+  display: none;
+}
+
 .stats {
   display: grid;
   gap: 8px;
