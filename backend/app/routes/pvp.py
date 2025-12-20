@@ -5,6 +5,8 @@ from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import JSONResponse
+from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, aliased
 
@@ -22,6 +24,7 @@ from app.pvp_constants import (
     GLOBAL_ATTACK_COOLDOWN_SEC,
     PRESTIGE_GAIN_CAP,
     PRESTIGE_LOSS_CAP,
+    PVP_MIN_ARMY_UNITS,
     SERVER_TZ,
 )
 from app.routes.auth import get_current_user
@@ -123,9 +126,6 @@ def attack(
     if not idempotency_key:
         raise HTTPException(status_code=400, detail="Missing Idempotency-Key")
 
-    now = datetime.now(SERVER_TZ)
-    today = now.date()
-
     attacker = (
         db.query(models.User)
         .filter(models.User.id == current_user.id)
@@ -134,6 +134,27 @@ def attack(
     )
     if not attacker:
         raise HTTPException(status_code=404, detail="Attacker not found")
+
+    total_units = (
+        db.query(func.coalesce(func.sum(models.UserUnit.qty), 0))
+        .filter(models.UserUnit.user_id == attacker.id)
+        .scalar()
+    )
+    if total_units < PVP_MIN_ARMY_UNITS:
+        return JSONResponse(
+            status_code=403,
+            content={
+                "error": {
+                    "code": "INSUFFICIENT_ARMY",
+                    "message": (
+                        f"Train at least {PVP_MIN_ARMY_UNITS} units in Barracks to attack."
+                    ),
+                }
+            },
+        )
+
+    now = datetime.now(SERVER_TZ)
+    today = now.date()
 
     is_test_env = os.getenv("APP_ENV") == "test"
     has_test_headers = any(

@@ -150,6 +150,17 @@ or when the same key is reused with a different payload.
 }
 ```
 
+### 403 - Army Gate
+
+```json
+{
+  "error": {
+    "code": "INSUFFICIENT_ARMY",
+    "message": "Train at least 10 units in Barracks to attack."
+  }
+}
+```
+
 ---
 
 ## Contract Rules
