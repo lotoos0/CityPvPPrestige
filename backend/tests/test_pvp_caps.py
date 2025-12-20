@@ -89,7 +89,7 @@ def test_gain_clamp_applies_remaining_only():
     assert body["prestige"]["delta"] == 5
 
     limits = client.get("/pvp/limits", headers={"Authorization": f"Bearer {token}"}).json()
-    assert limits["prestige_gain_left"] == 0
+    assert limits["limits"]["prestige_gain_left"] == 0
 
     cleanup_test_data(attacker_id, defender_id)
 
@@ -135,7 +135,7 @@ def test_loss_clamp_applies_remaining_only():
     assert body["prestige"]["delta"] == -5
 
     limits = client.get("/pvp/limits", headers={"Authorization": f"Bearer {token}"}).json()
-    assert limits["prestige_loss_left"] == 0
+    assert limits["limits"]["prestige_loss_left"] == 0
 
     cleanup_test_data(attacker_id, defender_id)
 

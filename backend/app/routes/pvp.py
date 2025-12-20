@@ -169,13 +169,6 @@ def attack(
         is_test_env and request.headers.get("X-Test-Ignore-Cooldowns") == "true"
     )
 
-    if (
-        not ignore_cooldowns
-        and attacker.last_pvp_at
-        and (now - attacker.last_pvp_at) < timedelta(seconds=GLOBAL_ATTACK_COOLDOWN_SEC)
-    ):
-        raise HTTPException(status_code=429, detail="Global attack cooldown")
-
     idempotency = models.PvpIdempotency(
         attacker_id=attacker.id,
         idempotency_key=idempotency_key,
@@ -199,6 +192,13 @@ def attack(
         if existing and existing.status == "pending":
             raise HTTPException(status_code=409, detail="Request in progress")
         raise HTTPException(status_code=409, detail="Idempotency conflict")
+
+    if (
+        not ignore_cooldowns
+        and attacker.last_pvp_at
+        and (now - attacker.last_pvp_at) < timedelta(seconds=GLOBAL_ATTACK_COOLDOWN_SEC)
+    ):
+        raise HTTPException(status_code=429, detail="Global attack cooldown")
 
     daily_stats = get_or_create_daily_stats(db, attacker.id, today, lock=True, create=True)
     if daily_stats.attacks_used >= DAILY_ATTACK_LIMIT:

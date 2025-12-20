@@ -41,7 +41,11 @@ def test_pvp_attack_idempotency():
     seed_units(attacker_id, 10)
 
     idempotency_key = str(uuid.uuid4())
-    headers = {"Authorization": f"Bearer {token}", "Idempotency-Key": idempotency_key}
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Idempotency-Key": idempotency_key,
+        "X-Test-Ignore-Cooldowns": "true",
+    }
     payload = {"defender_id": defender_id}
 
     response_1 = client.post("/pvp/attack", json=payload, headers=headers)
