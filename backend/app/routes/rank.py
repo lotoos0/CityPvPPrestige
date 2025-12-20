@@ -20,26 +20,21 @@ def get_or_create_city(db: Session, user: models.User) -> models.City:
     return city
 
 
-def fetch_ranked(db: Session) -> list[tuple[models.City, models.User]]:
-    return (
-        db.query(models.City, models.User)
-        .join(models.User, models.City.user_id == models.User.id)
-        .order_by(models.City.prestige.desc())
-        .all()
-    )
+def fetch_ranked(db: Session) -> list[models.User]:
+    return db.query(models.User).order_by(models.User.prestige.desc()).all()
 
 
 @router.get("/top", response_model=list[schemas.RankEntry])
 def top_rank(db: Session = Depends(get_db)):
     ranked = fetch_ranked(db)[:10]
     results = []
-    for idx, (city, user) in enumerate(ranked, start=1):
+    for idx, user in enumerate(ranked, start=1):
         results.append(
             schemas.RankEntry(
                 rank=idx,
                 user_id=user.id,
                 email=user.email,
-                prestige=city.prestige,
+                prestige=user.prestige,
             )
         )
     return results
@@ -54,7 +49,7 @@ def near_rank(
     ranked = fetch_ranked(db)
 
     user_index = 0
-    for idx, (_, user) in enumerate(ranked):
+    for idx, user in enumerate(ranked):
         if user.id == current_user.id:
             user_index = idx
             break
@@ -63,13 +58,13 @@ def near_rank(
     end = min(user_index + 4, len(ranked))
 
     results = []
-    for idx, (city, user) in enumerate(ranked[start:end], start=start + 1):
+    for idx, user in enumerate(ranked[start:end], start=start + 1):
         results.append(
             schemas.RankEntry(
                 rank=idx,
                 user_id=user.id,
                 email=user.email,
-                prestige=city.prestige,
+                prestige=user.prestige,
             )
         )
     return results

@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr
@@ -62,6 +63,21 @@ class AttackResult(BaseModel):
     defender_power: int
     prestige_delta_attacker: int
     prestige_delta_defender: int
+    attacks_left: Optional[int] = None
+    prestige_gain_left: Optional[int] = None
+    prestige_loss_left: Optional[int] = None
+    reset_at: Optional[datetime] = None
+    message_codes: Optional[list[str]] = None
+
+
+class PvpLimitsOut(BaseModel):
+    attacks_used: int
+    attacks_left: int
+    prestige_gain_today: int
+    prestige_gain_left: int
+    prestige_loss_today: int
+    prestige_loss_left: int
+    reset_at: datetime
 
 
 class RankEntry(BaseModel):

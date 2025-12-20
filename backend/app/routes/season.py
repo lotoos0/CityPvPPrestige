@@ -32,7 +32,7 @@ def start_season(
         {models.Season.is_active: False}
     )
     db.add(season)
-    db.query(models.City).update({models.City.prestige: 1000})
+    db.query(models.User).update({models.User.prestige: 1000})
     db.commit()
     db.refresh(season)
 
