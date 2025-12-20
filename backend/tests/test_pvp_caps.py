@@ -85,7 +85,7 @@ def test_gain_clamp_applies_remaining_only():
     response = client.post("/pvp/attack", json={"defender_id": defender_id}, headers=headers)
     assert response.status_code == 200
     body = response.json()
-    assert body["prestige_delta_attacker"] == 5
+    assert body["prestige"]["delta"] == 5
 
     limits = client.get("/pvp/limits", headers={"Authorization": f"Bearer {token}"}).json()
     assert limits["prestige_gain_left"] == 0
@@ -122,7 +122,7 @@ def test_loss_clamp_applies_remaining_only():
     headers = {
         "Authorization": f"Bearer {token}",
         "Idempotency-Key": idempotency_key,
-        "X-Test-Force-Result": "lose",
+        "X-Test-Force-Result": "loss",
         "X-Test-Force-Delta": "-40",
         "X-Test-Ignore-Cooldowns": "true",
     }
@@ -130,7 +130,7 @@ def test_loss_clamp_applies_remaining_only():
     response = client.post("/pvp/attack", json={"defender_id": defender_id}, headers=headers)
     assert response.status_code == 200
     body = response.json()
-    assert body["prestige_delta_attacker"] == -5
+    assert body["prestige"]["delta"] == -5
 
     limits = client.get("/pvp/limits", headers={"Authorization": f"Bearer {token}"}).json()
     assert limits["prestige_loss_left"] == 0

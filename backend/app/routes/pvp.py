@@ -105,7 +105,7 @@ def get_reset_at(now: datetime) -> datetime:
     return datetime.combine(next_day, time(0, 0, 0), tzinfo=SERVER_TZ)
 
 
-@router.post("/attack", response_model=schemas.AttackResult)
+@router.post("/attack", response_model=schemas.PvPAttackResponseOut)
 def attack(
     payload: schemas.AttackRequest,
     request: Request,
@@ -214,7 +214,7 @@ def attack(
     attack_effective = attack_power * random.uniform(0.9, 1.1)
     defense_effective = defense_power * random.uniform(0.9, 1.1)
 
-    result = "win" if attack_effective >= defense_effective else "lose"
+    result = "win" if attack_effective >= defense_effective else "loss"
 
     expected_win = compute_expected_win(attacker.prestige, defender.prestige)
     raw_delta = compute_prestige_delta(expected_win, result)
@@ -222,13 +222,15 @@ def attack(
     if is_test_env:
         forced_result = request.headers.get("X-Test-Force-Result")
         forced_delta = request.headers.get("X-Test-Force-Delta")
-        if forced_result in {"win", "lose"}:
+        if forced_result in {"win", "loss"}:
             result = forced_result
         if forced_delta is not None:
             try:
                 raw_delta = int(forced_delta)
             except ValueError:
                 raise HTTPException(status_code=400, detail="Invalid X-Test-Force-Delta")
+        elif forced_result in {"win", "loss"}:
+            raw_delta = compute_prestige_delta(expected_win, result)
 
     remaining_gain = max(0, PRESTIGE_GAIN_CAP - daily_stats.prestige_gain)
     remaining_loss = max(0, PRESTIGE_LOSS_CAP - daily_stats.prestige_loss)
@@ -258,6 +260,7 @@ def attack(
         defender_defense_power=defense_power,
     )
     db.add(log)
+    db.flush()
 
     daily_stats.attacks_used += 1
     if attacker_delta > 0:
@@ -278,25 +281,6 @@ def attack(
             )
         )
 
-    response_payload = schemas.AttackResult(
-        result=result,
-        attacker_power=attack_power,
-        defender_power=defense_power,
-        prestige_delta_attacker=attacker_delta,
-        prestige_delta_defender=defender_delta,
-        attacks_left=attacks_left,
-        prestige_gain_left=gain_left,
-        prestige_loss_left=loss_left,
-        reset_at=get_reset_at(now),
-        message_codes=message_codes or None,
-    ).model_dump(mode="json")
-
-    idempotency.status = "completed"
-    idempotency.response_json = response_payload
-    idempotency.updated_at = now
-
-    db.commit()
-
     attacks_left = max(0, DAILY_ATTACK_LIMIT - daily_stats.attacks_used)
     gain_left = max(0, PRESTIGE_GAIN_CAP - daily_stats.prestige_gain)
     loss_left = max(0, PRESTIGE_LOSS_CAP - daily_stats.prestige_loss)
@@ -306,6 +290,45 @@ def attack(
         message_codes.append("APPROACHING_ATTACK_CAP")
     if gain_left <= 50:
         message_codes.append("APPROACHING_GAIN_CAP")
+    if attacks_left == 0:
+        message_codes.append("ATTACK_CAP_REACHED")
+    if gain_left == 0:
+        message_codes.append("GAIN_CAP_REACHED")
+    if loss_left == 0:
+        message_codes.append("LOSS_CAP_REACHED")
+
+    response_payload = schemas.PvPAttackResponseOut(
+        battle_id=log.id,
+        attacker_id=attacker.id,
+        defender_id=defender.id,
+        result=result,
+        expected_win=expected_win,
+        prestige=schemas.PvPPrestigeOut(
+            delta=attacker_delta,
+            attacker_before=attacker.prestige - attacker_delta,
+            attacker_after=attacker.prestige,
+        ),
+        limits=schemas.PvpLimitsOut(
+            reset_at=get_reset_at(now),
+            attacks_used=daily_stats.attacks_used,
+            attacks_left=attacks_left,
+            prestige_gain_today=daily_stats.prestige_gain,
+            prestige_gain_left=gain_left,
+            prestige_loss_today=daily_stats.prestige_loss,
+            prestige_loss_left=loss_left,
+        ),
+        cooldowns=schemas.PvPCooldownsOut(
+            global_available_at=now + timedelta(seconds=GLOBAL_ATTACK_COOLDOWN_SEC),
+            same_target_available_at=now + timedelta(minutes=COOLDOWN_MINUTES),
+        ),
+        messages=message_codes,
+    ).model_dump(mode="json")
+
+    idempotency.status = "completed"
+    idempotency.response_json = response_payload
+    idempotency.updated_at = now
+
+    db.commit()
 
     return response_payload
 

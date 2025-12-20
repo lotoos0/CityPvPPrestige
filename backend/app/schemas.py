@@ -1,8 +1,8 @@
 from datetime import datetime
-from typing import Optional
+from typing import Literal, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class UserCreate(BaseModel):
@@ -78,6 +78,40 @@ class PvpLimitsOut(BaseModel):
     prestige_loss_today: int
     prestige_loss_left: int
     reset_at: datetime
+
+
+MessageCode = Literal[
+    "APPROACHING_ATTACK_CAP",
+    "ATTACK_CAP_REACHED",
+    "APPROACHING_GAIN_CAP",
+    "GAIN_CAP_REACHED",
+    "LOSS_CAP_REACHED",
+    "TARGET_COOLDOWN",
+    "GLOBAL_COOLDOWN",
+]
+
+
+class PvPPrestigeOut(BaseModel):
+    delta: int
+    attacker_before: int
+    attacker_after: int
+
+
+class PvPCooldownsOut(BaseModel):
+    global_available_at: Optional[datetime] = None
+    same_target_available_at: Optional[datetime] = None
+
+
+class PvPAttackResponseOut(BaseModel):
+    battle_id: UUID
+    attacker_id: UUID
+    defender_id: UUID
+    result: Literal["win", "loss"]
+    expected_win: float = Field(ge=0.0, le=1.0)
+    prestige: PvPPrestigeOut
+    limits: PvpLimitsOut
+    cooldowns: PvPCooldownsOut
+    messages: list[MessageCode]
 
 
 class RankEntry(BaseModel):
