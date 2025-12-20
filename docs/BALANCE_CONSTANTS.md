@@ -43,3 +43,24 @@ Town Hall is defined explicitly (see PVP and metadata docs).
 - DAILY_DECAY_MAX: 60
 - INACTIVITY_GRACE: 2
 - INACTIVITY_MULT: 1.5
+
+---
+
+## PvP Daily Caps (MVP)
+
+- ATTACKS_PER_DAY_LIMIT: 20
+- PRESTIGE_GAIN_PER_DAY_CAP: 300
+- PRESTIGE_LOSS_PER_DAY_CAP: 250
+
+---
+
+## PvP Cooldowns (MVP)
+
+- ATTACK_SAME_TARGET_COOLDOWN_MIN: 30
+- GLOBAL_ATTACK_COOLDOWN_SEC: 30
+
+---
+
+## Daily Reset
+
+- DAILY_RESET_TIME: 00:00 (server time)
