@@ -648,6 +648,16 @@ function updateHistoryLoadMore() {
   }
 }
 
+function updateHistoryLoadedCount() {
+  if (!historyStatus) {
+    return;
+  }
+  const count = attackLog.children.length;
+  if (count > 0) {
+    historyStatus.textContent = `Loaded ${count} entries`;
+  }
+}
+
 async function refreshHistory() {
   if (pvpLogLoading) {
     return;
@@ -661,7 +671,7 @@ async function refreshHistory() {
     pvpLogNextCursor = response.next_cursor || null;
     renderHistory(items, false);
     updateHistoryLoadMore();
-    historyStatus.textContent = "";
+    updateHistoryLoadedCount();
   } catch (error) {
     historyStatus.textContent = error.message;
   } finally {
@@ -683,7 +693,7 @@ async function loadMoreHistory() {
     pvpLogNextCursor = response.next_cursor || null;
     renderHistory(freshItems, true);
     updateHistoryLoadMore();
-    historyStatus.textContent = "";
+    updateHistoryLoadedCount();
   } catch (error) {
     historyStatus.textContent = error.message;
   } finally {
@@ -790,6 +800,7 @@ logoutBtn.addEventListener("click", () => {
   pvpLogNextCursor = null;
   pvpLogSeen = new Set();
   updateHistoryLoadMore();
+  historyStatus.textContent = "";
   setMessage("Logged out.");
   setBuildStatus("");
   collectBtn.disabled = true;
