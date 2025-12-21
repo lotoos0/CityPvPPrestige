@@ -299,7 +299,7 @@ function renderHistory(entries) {
   entries.forEach((entry) => {
     const isAttacker = entry.attacker_id === currentUser?.id;
     const opponent = isAttacker ? entry.defender_email : entry.attacker_email;
-    const delta = isAttacker ? entry.prestige_delta_attacker : entry.prestige_delta_defender;
+    const delta = entry.prestige_delta;
     const outcome = delta >= 0 ? "Prestige up" : "Prestige down";
     const timestamp = new Date(entry.created_at).toLocaleString();
 
@@ -318,8 +318,8 @@ function renderHistory(entries) {
 
 async function refreshHistory() {
   try {
-    const entries = await fetchAttackLog();
-    renderHistory(entries);
+    const response = await fetchAttackLog();
+    renderHistory(response.items || []);
     historyStatus.textContent = "";
   } catch (error) {
     historyStatus.textContent = error.message;

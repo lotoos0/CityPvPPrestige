@@ -35,7 +35,7 @@
 - id (uuid, pk)
 - attacker_id (fk -> user.id)
 - defender_id (fk -> user.id)
-- result (win/lose)
+- result (win/loss)
 - prestige_delta_attacker (int)
 - prestige_delta_defender (int)
 - created_at (timestamp)

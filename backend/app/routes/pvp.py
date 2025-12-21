@@ -1,8 +1,10 @@
 import random
 from datetime import datetime, timedelta, timezone
+from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session, aliased
 
 from app import models, schemas
@@ -78,6 +80,28 @@ def get_last_attack(db: Session, attacker_id: UUID, defender_id: UUID):
     )
 
 
+def _normalize_result(result: str) -> str:
+    return "loss" if result == "lose" else result
+
+
+def _serialize_cursor(created_at: datetime, log_id: UUID) -> str:
+    return f"{created_at.isoformat()}|{log_id}"
+
+
+def _parse_cursor(cursor: str) -> tuple[datetime, UUID]:
+    parts = cursor.split("|", 1)
+    if len(parts) != 2:
+        raise HTTPException(status_code=400, detail="Invalid cursor")
+
+    try:
+        cursor_time = datetime.fromisoformat(parts[0])
+        cursor_id = UUID(parts[1])
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="Invalid cursor") from exc
+
+    return cursor_time, cursor_id
+
+
 @router.post("/attack", response_model=schemas.AttackResult)
 def attack(
     payload: schemas.AttackRequest,
@@ -121,12 +145,12 @@ def attack(
     attack_effective = attack_power * random.uniform(0.9, 1.1)
     defense_effective = defense_power * random.uniform(0.9, 1.1)
 
-    result = "win" if attack_effective >= defense_effective else "lose"
+    result = "win" if attack_effective >= defense_effective else "loss"
 
     attacker_delta = compute_prestige_delta(
         attacker_city.prestige, defender_city.prestige, result
     )
-    defender_result = "lose" if result == "win" else "win"
+    defender_result = "loss" if result == "win" else "win"
     defender_delta = compute_prestige_delta(
         defender_city.prestige, attacker_city.prestige, defender_result
     )
@@ -153,14 +177,16 @@ def attack(
     )
 
 
-@router.get("/log", response_model=list[schemas.AttackLogEntry])
+@router.get("/log", response_model=schemas.PvPLogResponseOut)
 def log(
+    limit: int = Query(20, ge=1, le=50),
+    cursor: Optional[str] = None,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
     attacker_alias = aliased(models.User)
     defender_alias = aliased(models.User)
-    logs = (
+    query = (
         db.query(models.AttackLog, attacker_alias, defender_alias)
         .join(attacker_alias, models.AttackLog.attacker_id == attacker_alias.id)
         .join(defender_alias, models.AttackLog.defender_id == defender_alias.id)
@@ -168,24 +194,62 @@ def log(
             (models.AttackLog.attacker_id == current_user.id)
             | (models.AttackLog.defender_id == current_user.id)
         )
-        .order_by(models.AttackLog.created_at.desc())
-        .limit(20)
+    )
+
+    if cursor:
+        cursor_time, cursor_id = _parse_cursor(cursor)
+        query = query.filter(
+            or_(
+                models.AttackLog.created_at < cursor_time,
+                and_(
+                    models.AttackLog.created_at == cursor_time,
+                    models.AttackLog.id < cursor_id,
+                ),
+            )
+        )
+
+    logs = (
+        query.order_by(
+            models.AttackLog.created_at.desc(),
+            models.AttackLog.id.desc(),
+        )
+        .limit(limit + 1)
         .all()
     )
 
-    results = []
+    has_more = len(logs) > limit
+    logs = logs[:limit]
+
+    items: list[schemas.PvPLogItemOut] = []
     for log_entry, attacker, defender in logs:
-        results.append(
-            schemas.AttackLogEntry(
-                id=log_entry.id,
+        is_attacker = log_entry.attacker_id == current_user.id
+        stored_result = _normalize_result(log_entry.result)
+        result = stored_result
+        if not is_attacker:
+            result = "win" if stored_result == "loss" else "loss"
+
+        prestige_delta = (
+            log_entry.prestige_delta_attacker
+            if is_attacker
+            else log_entry.prestige_delta_defender
+        )
+
+        items.append(
+            schemas.PvPLogItemOut(
+                battle_id=log_entry.id,
                 attacker_id=attacker.id,
                 attacker_email=attacker.email,
                 defender_id=defender.id,
                 defender_email=defender.email,
-                result=log_entry.result,
-                prestige_delta_attacker=log_entry.prestige_delta_attacker,
-                prestige_delta_defender=log_entry.prestige_delta_defender,
+                result=result,
+                prestige_delta=prestige_delta,
                 created_at=log_entry.created_at,
             )
         )
-    return results
+
+    next_cursor = None
+    if has_more and items:
+        last = items[-1]
+        next_cursor = _serialize_cursor(last.created_at, last.battle_id)
+
+    return {"items": items, "next_cursor": next_cursor}

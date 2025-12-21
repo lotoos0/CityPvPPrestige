@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr
@@ -81,6 +82,22 @@ class AttackLogEntry(BaseModel):
     prestige_delta_attacker: int
     prestige_delta_defender: int
     created_at: datetime
+
+
+class PvPLogItemOut(BaseModel):
+    battle_id: UUID
+    attacker_id: UUID
+    attacker_email: EmailStr
+    defender_id: UUID
+    defender_email: EmailStr
+    result: str
+    prestige_delta: int
+    created_at: datetime
+
+
+class PvPLogResponseOut(BaseModel):
+    items: list[PvPLogItemOut]
+    next_cursor: Optional[str] = None
 
 
 class SeasonOut(BaseModel):
