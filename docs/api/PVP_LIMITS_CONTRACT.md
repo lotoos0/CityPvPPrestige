@@ -33,7 +33,8 @@ GET /pvp/limits
 
   "cooldowns": {
     "global_available_at": "2025-12-20T21:33:12+01:00",
-    "same_target_available_at": "2025-12-20T22:02:00+01:00"
+    "same_target_available_at": "2025-12-20T22:02:00+01:00",
+    "global_remaining_sec": 37
   }
 }
 ```
@@ -48,7 +49,8 @@ nightly_decay - optional; last applied decay amount for the current user (null i
 
 nightly_decay_applied_at - optional; server timestamp when nightly decay was applied.
 
-cooldowns - optional; current cooldown snapshots (null if not provided).
+cooldowns — optional; current cooldown snapshots (null if not provided).
+cooldowns.global_remaining_sec — remaining global cooldown in seconds (0 = ready).
 
 ---
 

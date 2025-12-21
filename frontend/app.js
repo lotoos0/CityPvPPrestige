@@ -469,7 +469,10 @@ function renderPvpHud(payload) {
   pvpGainRow.innerHTML = `Prestige gain today: <strong>${limits.prestige_gain_today}</strong> / left <strong>${limits.prestige_gain_left}</strong>`;
   pvpLossRow.innerHTML = `Prestige loss today: <strong>${limits.prestige_loss_today}</strong> / protected left <strong>${limits.prestige_loss_left}</strong>`;
 
-  const globalLeft = secondsLeft(cooldowns?.global_available_at ?? null);
+  const globalLeft =
+    typeof cooldowns?.global_remaining_sec === "number"
+      ? cooldowns.global_remaining_sec
+      : secondsLeft(cooldowns?.global_available_at ?? null);
   const targetLeft = secondsLeft(cooldowns?.same_target_available_at ?? null);
 
   pvpGlobalCooldown.innerHTML = `Global cooldown: <strong>${formatDuration(globalLeft)}</strong>`;

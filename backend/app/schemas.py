@@ -100,6 +100,7 @@ class PvPPrestigeOut(BaseModel):
 class PvPCooldownsOut(BaseModel):
     global_available_at: Optional[datetime] = None
     same_target_available_at: Optional[datetime] = None
+    global_remaining_sec: Optional[int] = None
 
 
 class PvPLimitsResponseOut(BaseModel):

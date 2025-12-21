@@ -54,6 +54,12 @@ def test_pvp_limits_matches_contract_shape() -> None:
     assert isinstance(limits["prestige_loss_today"], int)
     assert isinstance(limits["prestige_loss_left"], int)
 
+    assert "cooldowns" in body
+    cooldowns = body["cooldowns"]
+    assert "global_remaining_sec" in cooldowns
+    assert isinstance(cooldowns["global_remaining_sec"], int)
+    assert cooldowns["global_remaining_sec"] >= 0
+
     cleanup_test_data(user_id)
 
 

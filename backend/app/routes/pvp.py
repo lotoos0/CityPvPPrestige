@@ -410,7 +410,16 @@ def limits(
         reset_at=get_reset_at(now),
     )
 
-    return schemas.PvPLimitsResponseOut(limits=limits_out)
+    last_attack = current_user.last_pvp_at
+    if last_attack:
+        elapsed = (now - last_attack).total_seconds()
+        remaining = max(0, int(GLOBAL_ATTACK_COOLDOWN_SEC - elapsed))
+    else:
+        remaining = 0
+
+    cooldowns = schemas.PvPCooldownsOut(global_remaining_sec=remaining)
+
+    return schemas.PvPLimitsResponseOut(limits=limits_out, cooldowns=cooldowns)
 
 
 @router.get("/log", response_model=schemas.PvPLogResponseOut)
