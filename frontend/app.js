@@ -18,6 +18,7 @@ const rankNear = document.getElementById("rankNear");
 const rankStatus = document.getElementById("rankStatus");
 const attackLog = document.getElementById("attackLog");
 const historyStatus = document.getElementById("historyStatus");
+const historyLoadMore = document.getElementById("historyLoadMore");
 const pvpResetAt = document.getElementById("pvpResetAt");
 const pvpRefreshBtn = document.getElementById("pvpRefreshBtn");
 const pvpBanner = document.getElementById("pvpBanner");
@@ -42,6 +43,9 @@ let cityState = null;
 let currentUser = null;
 let pvpRefreshTimer = null;
 let armyRefreshTimer = null;
+let pvpLogNextCursor = null;
+let pvpLogLoading = false;
+let pvpLogSeen = new Set();
 
 function getApiBase() {
   return localStorage.getItem(API_KEY) || "http://localhost:8000";
@@ -251,8 +255,12 @@ async function attackPlayer(userId) {
   return response.json();
 }
 
-async function fetchAttackLog() {
-  const response = await fetch(`${getApiBase()}/pvp/log`, {
+async function fetchAttackLog(limit = 20, cursor = null) {
+  const params = new URLSearchParams({ limit: String(limit) });
+  if (cursor) {
+    params.set("cursor", cursor);
+  }
+  const response = await fetch(`${getApiBase()}/pvp/log?${params.toString()}`, {
     headers: { ...authHeaders() },
   });
 
@@ -600,8 +608,10 @@ function renderRankList(container, entries) {
   });
 }
 
-function renderHistory(entries) {
-  attackLog.innerHTML = "";
+function renderHistory(entries, append = false) {
+  if (!append) {
+    attackLog.innerHTML = "";
+  }
   entries.forEach((entry) => {
     const isAttacker = entry.attacker_id === currentUser?.id;
     const opponent = isAttacker ? entry.defender_email : entry.attacker_email;
@@ -622,13 +632,59 @@ function renderHistory(entries) {
   });
 }
 
+function updateHistoryLoadMore() {
+  if (!historyLoadMore) {
+    return;
+  }
+  if (pvpLogNextCursor) {
+    historyLoadMore.disabled = false;
+    historyLoadMore.textContent = "Load more";
+  } else {
+    historyLoadMore.disabled = true;
+    historyLoadMore.textContent = "No more";
+  }
+}
+
 async function refreshHistory() {
+  if (pvpLogLoading) {
+    return;
+  }
+  pvpLogLoading = true;
+  historyStatus.textContent = "Loading...";
   try {
-    const response = await fetchAttackLog();
-    renderHistory(response.items || []);
+    const response = await fetchAttackLog(20);
+    const items = response.items || [];
+    pvpLogSeen = new Set(items.map((item) => item.battle_id));
+    pvpLogNextCursor = response.next_cursor || null;
+    renderHistory(items, false);
+    updateHistoryLoadMore();
     historyStatus.textContent = "";
   } catch (error) {
     historyStatus.textContent = error.message;
+  } finally {
+    pvpLogLoading = false;
+  }
+}
+
+async function loadMoreHistory() {
+  if (pvpLogLoading || !pvpLogNextCursor) {
+    return;
+  }
+  pvpLogLoading = true;
+  historyStatus.textContent = "Loading...";
+  try {
+    const response = await fetchAttackLog(20, pvpLogNextCursor);
+    const items = response.items || [];
+    const freshItems = items.filter((item) => !pvpLogSeen.has(item.battle_id));
+    freshItems.forEach((item) => pvpLogSeen.add(item.battle_id));
+    pvpLogNextCursor = response.next_cursor || null;
+    renderHistory(freshItems, true);
+    updateHistoryLoadMore();
+    historyStatus.textContent = "";
+  } catch (error) {
+    historyStatus.textContent = error.message;
+  } finally {
+    pvpLogLoading = false;
   }
 }
 
@@ -728,6 +784,9 @@ logoutBtn.addEventListener("click", () => {
   rankTop.innerHTML = "";
   rankNear.innerHTML = "";
   attackLog.innerHTML = "";
+  pvpLogNextCursor = null;
+  pvpLogSeen = new Set();
+  updateHistoryLoadMore();
   setMessage("Logged out.");
   setBuildStatus("");
   collectBtn.disabled = true;
@@ -784,3 +843,10 @@ trainSubmit.addEventListener("click", () => {
 claimSubmit.addEventListener("click", () => {
   claimUnits();
 });
+
+if (historyLoadMore) {
+  historyLoadMore.addEventListener("click", () => {
+    loadMoreHistory();
+  });
+  updateHistoryLoadMore();
+}
