@@ -488,6 +488,7 @@ def log(
                 defender_email=defender.email,
                 result=result,
                 prestige_delta=prestige_delta,
+                expected_win=log_entry.expected_win,
                 created_at=log_entry.created_at,
             )
         )

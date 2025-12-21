@@ -188,6 +188,7 @@ class PvPLogItemOut(BaseModel):
     defender_email: EmailStr
     result: str
     prestige_delta: int
+    expected_win: Optional[float] = None
     created_at: datetime
 
 

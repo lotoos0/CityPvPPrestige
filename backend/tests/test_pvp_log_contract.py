@@ -210,6 +210,9 @@ def test_pvp_log_contract() -> None:
         assert isinstance(item["prestige_delta"], int)
         assert "attacker_email" in item
         assert "defender_email" in item
+        assert "expected_win" in item
+        if item["expected_win"] is not None:
+            assert 0.0 <= item["expected_win"] <= 1.0
         assert "created_at" in item
 
     attacker_view = next(
@@ -217,11 +220,13 @@ def test_pvp_log_contract() -> None:
     )
     assert attacker_view["result"] == "win"
     assert attacker_view["prestige_delta"] == 15
+    assert attacker_view["expected_win"] == 0.6
 
     defender_view = next(
         entry for entry in items if entry["defender_id"] == attacker_id
     )
     assert defender_view["result"] == "loss"
     assert defender_view["prestige_delta"] == -12
+    assert defender_view["expected_win"] == 0.7
 
     cleanup_test_data(attacker_id, defender_id)

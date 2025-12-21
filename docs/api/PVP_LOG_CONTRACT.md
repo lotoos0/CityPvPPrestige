@@ -28,6 +28,7 @@ Query params:
       "defender_email": "user@example.com",
       "result": "win|loss",
       "prestige_delta": 12,
+      "expected_win": 0.63,
       "created_at": "2025-12-21T18:42:00+01:00"
     }
   ],
@@ -42,9 +43,9 @@ Field semantics
 
 prestige_delta - final applied delta for the current user.
 
-next_cursor - opaque pagination cursor (null if no more).
+expected_win - win probability snapshot for the attacker at the moment of battle (null for legacy logs).
 
-expected_win planned for v2 (not stored in logs in MVP).
+next_cursor - opaque pagination cursor (null if no more).
 
 ---
 
