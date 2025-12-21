@@ -37,6 +37,8 @@ prestige_delta - final applied delta for the current user.
 
 next_cursor - opaque pagination cursor (null if no more).
 
+expected_win planned for v2 (not stored in logs in MVP).
+
 ---
 
 ## Contract Rules
