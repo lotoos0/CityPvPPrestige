@@ -66,6 +66,57 @@
           <div class="stats" id="combatStats"></div>
           <p class="hint">Attack from Barracks, defense adds Wall/Tower.</p>
         </div>
+        <div class="card pvp-hud">
+          <div class="pvp-hud-header">
+            <div>
+              <h2>PvP Status</h2>
+              <p class="hint">Reset at <span id="pvpResetAt">--</span></p>
+            </div>
+            <button id="pvpRefreshBtn" class="btn ghost" disabled>Refresh</button>
+          </div>
+          <div id="pvpBanner" class="pvp-banner hidden"></div>
+          <div class="pvp-status">
+            <div class="pvp-row" id="pvpAttacksRow">Attacks: --</div>
+            <div class="pvp-row" id="pvpGainRow">Prestige gain: --</div>
+            <div class="pvp-row" id="pvpLossRow">Prestige loss: --</div>
+          </div>
+          <div class="pvp-cooldowns">
+            <div class="pvp-row" id="pvpGlobalCooldown">Global cooldown: --</div>
+            <div class="pvp-row" id="pvpTargetCooldown">Same target cooldown: --</div>
+          </div>
+          <div id="pvpStatus" class="status"></div>
+        </div>
+        <div class="card" id="army-card">
+          <h2>Army</h2>
+          <div class="row">
+            <button id="army-refresh" class="btn ghost" disabled>Refresh</button>
+            <span id="army-status" class="status"></span>
+          </div>
+          <div id="army-units" class="list"></div>
+        </div>
+        <div class="card" id="barracks-card">
+          <h2>Barracks</h2>
+          <div class="row">
+            <label>
+              Unit:
+              <select id="train-unit" class="input">
+                <option value="raider">Raider</option>
+                <option value="guardian">Guardian</option>
+              </select>
+            </label>
+            <label>
+              Qty:
+              <input id="train-qty" class="input" type="number" min="1" max="1000" value="10" />
+            </label>
+            <button id="train-submit" class="btn">Train</button>
+          </div>
+          <div class="row">
+            <button id="queue-refresh" class="btn ghost">Refresh Queue</button>
+            <button id="claim-submit" class="btn ghost">Claim</button>
+            <span id="barracks-status" class="status"></span>
+          </div>
+          <div id="barracks-queue" class="list"></div>
+        </div>
         <div class="card">
           <h2>Build</h2>
           <label class="label" for="buildingType">Building type</label>

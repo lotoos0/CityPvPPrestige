@@ -28,7 +28,9 @@ def register(payload: schemas.UserCreate, db: Session = Depends(get_db)):
     db.flush()
 
     city = models.City(user_id=user.id)
+    barracks = models.UserBuilding(user_id=user.id, building_type="barracks", level=1)
     db.add(city)
+    db.add(barracks)
     db.commit()
     db.refresh(user)
     return user

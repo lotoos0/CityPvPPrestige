@@ -1,0 +1,10 @@
+[Unit]
+Description=Run nightly prestige soft-decay daily at 00:00
+
+[Timer]
+OnCalendar=*-*-* 00:00:00
+Persistent=true
+Unit=prestige-decay.service
+
+[Install]
+WantedBy=timers.target

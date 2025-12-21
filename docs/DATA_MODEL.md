@@ -62,6 +62,18 @@ Simple, readable numbers for MVP. Values are per hour for production.
 | Tower | +2 defense | +5 defense | +9 defense |
 | Storage | +200 gold cap | +500 gold cap | +900 gold cap |
 
+**MVP Scope Note**
+
+`Power Plant` is defined in the data model for future expansion,
+but is **explicitly excluded from the MVP building set**.
+
+In the MVP, power generation is handled indirectly via
+military and infrastructure buildings (e.g. Barracks / Security Complex),
+and no standalone Power Plant building exists.
+
+This entry is kept for post-MVP planning and should not be referenced
+by `BUILDINGS_METADATA.md` until explicitly enabled.
+
 Notes:
 - Attack power = sum(Barracks bonuses).
 - Defense power = attack power + Wall/Tower bonuses.

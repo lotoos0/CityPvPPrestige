@@ -71,7 +71,7 @@ def get_city(
         gold=city.gold,
         pop=city.pop,
         power=city.power,
-        prestige=city.prestige,
+        prestige=current_user.prestige,
         buildings=buildings,
     )
 
@@ -98,7 +98,7 @@ def collect_resources(
             gold=city.gold,
             pop=city.pop,
             power=city.power,
-            prestige=city.prestige,
+            prestige=current_user.prestige,
             buildings=buildings,
         )
 
@@ -110,7 +110,7 @@ def collect_resources(
             gold=city.gold,
             pop=city.pop,
             power=city.power,
-            prestige=city.prestige,
+            prestige=current_user.prestige,
             buildings=buildings,
         )
 
@@ -131,7 +131,7 @@ def collect_resources(
         gold=city.gold,
         pop=city.pop,
         power=city.power,
-        prestige=city.prestige,
+        prestige=current_user.prestige,
         buildings=buildings,
     )
 
@@ -189,6 +189,6 @@ def build(
         gold=city.gold,
         pop=city.pop,
         power=city.power,
-        prestige=city.prestige,
+        prestige=current_user.prestige,
         buildings=buildings,
     )

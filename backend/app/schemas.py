@@ -1,8 +1,8 @@
 from datetime import datetime
-from typing import Optional
+from typing import Literal, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class UserCreate(BaseModel):
@@ -63,6 +63,101 @@ class AttackResult(BaseModel):
     defender_power: int
     prestige_delta_attacker: int
     prestige_delta_defender: int
+    attacks_left: Optional[int] = None
+    prestige_gain_left: Optional[int] = None
+    prestige_loss_left: Optional[int] = None
+    reset_at: Optional[datetime] = None
+    message_codes: Optional[list[str]] = None
+
+
+class PvpLimitsOut(BaseModel):
+    attacks_used: int
+    attacks_left: int
+    prestige_gain_today: int
+    prestige_gain_left: int
+    prestige_loss_today: int
+    prestige_loss_left: int
+    reset_at: datetime
+
+
+MessageCode = Literal[
+    "APPROACHING_ATTACK_CAP",
+    "ATTACK_CAP_REACHED",
+    "APPROACHING_GAIN_CAP",
+    "GAIN_CAP_REACHED",
+    "LOSS_CAP_REACHED",
+    "TARGET_COOLDOWN",
+    "GLOBAL_COOLDOWN",
+]
+
+
+class PvPPrestigeOut(BaseModel):
+    delta: int
+    attacker_before: int
+    attacker_after: int
+
+
+class PvPCooldownsOut(BaseModel):
+    global_available_at: Optional[datetime] = None
+    same_target_available_at: Optional[datetime] = None
+
+
+class PvPLimitsResponseOut(BaseModel):
+    limits: PvpLimitsOut
+    nightly_decay: Optional[int] = None
+    nightly_decay_applied_at: Optional[datetime] = None
+    cooldowns: Optional[PvPCooldownsOut] = None
+
+
+class PvPAttackResponseOut(BaseModel):
+    battle_id: UUID
+    attacker_id: UUID
+    defender_id: UUID
+    result: Literal["win", "loss"]
+    expected_win: float = Field(ge=0.0, le=1.0)
+    prestige: PvPPrestigeOut
+    limits: PvpLimitsOut
+    cooldowns: PvPCooldownsOut
+    messages: list[MessageCode]
+
+
+class ArmyUnitOut(BaseModel):
+    code: str
+    qty: int = Field(ge=0)
+
+
+class ArmyOut(BaseModel):
+    units: list[ArmyUnitOut]
+
+
+class BarracksTrainIn(BaseModel):
+    unit_code: Literal["raider", "guardian"]
+    qty: int = Field(ge=1, le=1000)
+
+
+class BarracksTrainOut(BaseModel):
+    job_id: UUID
+    status: Literal["running"]
+    unit_code: str
+    qty: int
+    started_at: datetime
+    completes_at: datetime
+
+
+class BarracksQueueOut(BaseModel):
+    status: Optional[Literal["running", "done"]] = None
+    job_id: Optional[UUID] = None
+    unit_code: Optional[str] = None
+    qty: Optional[int] = None
+    started_at: Optional[datetime] = None
+    completes_at: Optional[datetime] = None
+
+
+class BarracksClaimOut(BaseModel):
+    claimed: bool
+    unit_code: Optional[str] = None
+    qty: Optional[int] = None
+    job_id: Optional[UUID] = None
 
 
 class RankEntry(BaseModel):

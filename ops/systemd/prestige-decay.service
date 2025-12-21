@@ -1,0 +1,30 @@
+[Unit]
+Description=Nightly prestige soft-decay job
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+
+# IMPORTANT: set correct paths for your deployment
+WorkingDirectory=/opt/yourgame/backend
+ExecStart=/opt/yourgame/venv/bin/python -m app.jobs.nightly_decay
+
+# Recommended hardening (safe for most apps)
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+RestrictRealtime=true
+
+# If your app needs to read env file/config, allow it explicitly
+# ReadWritePaths=/opt/yourgame/backend
+
+# Logging
+StandardOutput=journal
+StandardError=journal
