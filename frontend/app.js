@@ -621,13 +621,17 @@ function renderHistory(entries, append = false) {
     const delta = entry.prestige_delta;
     const outcome = delta >= 0 ? "Prestige up" : "Prestige down";
     const timestamp = new Date(entry.created_at).toLocaleString();
+    const expectedText =
+      typeof entry.expected_win === "number"
+        ? `${Math.round(entry.expected_win * 100)}%`
+        : "—";
 
     const item = document.createElement("div");
     item.className = "history-item";
     item.innerHTML = `
       <div>
         <strong>${outcome} (${delta})</strong>
-        <span>${isAttacker ? "Attacked" : "Defended"} vs ${opponent} • ${entry.result}</span>
+        <span>${isAttacker ? "Attacked" : "Defended"} vs ${opponent} • ${entry.result} • ${expectedText}</span>
       </div>
       <span>${timestamp}</span>
     `;
