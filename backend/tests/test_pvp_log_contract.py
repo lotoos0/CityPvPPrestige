@@ -29,7 +29,7 @@ def seed_logs(attacker_id, defender_id) -> None:
     now = datetime.now(SERVER_TZ)
     db = SessionLocal()
     try:
-        db.add(
+        logs = [
             models.AttackLog(
                 attacker_id=attacker_id,
                 defender_id=defender_id,
@@ -42,9 +42,7 @@ def seed_logs(attacker_id, defender_id) -> None:
                 attacker_attack_power=10,
                 defender_defense_power=8,
                 created_at=now,
-            )
-        )
-        db.add(
+            ),
             models.AttackLog(
                 attacker_id=defender_id,
                 defender_id=attacker_id,
@@ -56,12 +54,61 @@ def seed_logs(attacker_id, defender_id) -> None:
                 defender_prestige_before=1290,
                 attacker_attack_power=12,
                 defender_defense_power=9,
+                created_at=now,
+            ),
+            models.AttackLog(
+                attacker_id=attacker_id,
+                defender_id=defender_id,
+                result="win",
+                prestige_delta_attacker=8,
+                prestige_delta_defender=0,
+                expected_win=0.55,
+                attacker_prestige_before=1210,
+                defender_prestige_before=1190,
+                attacker_attack_power=11,
+                defender_defense_power=9,
                 created_at=now - timedelta(minutes=1),
-            )
-        )
+            ),
+            models.AttackLog(
+                attacker_id=defender_id,
+                defender_id=attacker_id,
+                result="win",
+                prestige_delta_attacker=5,
+                prestige_delta_defender=-4,
+                expected_win=0.52,
+                attacker_prestige_before=1250,
+                defender_prestige_before=1240,
+                attacker_attack_power=9,
+                defender_defense_power=10,
+                created_at=now - timedelta(minutes=2),
+            ),
+            models.AttackLog(
+                attacker_id=attacker_id,
+                defender_id=defender_id,
+                result="win",
+                prestige_delta_attacker=3,
+                prestige_delta_defender=0,
+                expected_win=0.51,
+                attacker_prestige_before=1220,
+                defender_prestige_before=1210,
+                attacker_attack_power=10,
+                defender_defense_power=10,
+                created_at=now - timedelta(minutes=3),
+            ),
+        ]
+        db.add_all(logs)
         db.commit()
     finally:
         db.close()
+
+
+def _assert_desc_order(items) -> None:
+    last_dt = None
+    for item in items:
+        current_dt = datetime.fromisoformat(item["created_at"])
+        if last_dt is not None:
+            assert current_dt <= last_dt
+        last_dt = current_dt
 
 
 def cleanup_test_data(attacker_id, defender_id) -> None:
@@ -121,16 +168,42 @@ def test_pvp_log_contract() -> None:
     assert len(body["items"]) == 1
 
     response = client.get(
+        "/pvp/log?limit=2",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 200, response.text
+    page1 = response.json()
+    assert "items" in page1
+    assert "next_cursor" in page1
+    assert len(page1["items"]) == 2
+    assert page1["next_cursor"]
+
+    response = client.get(
+        f"/pvp/log?limit=2&cursor={page1['next_cursor']}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 200, response.text
+    page2 = response.json()
+    assert "items" in page2
+    assert "next_cursor" in page2
+    assert len(page2["items"]) == 2
+
+    page1_ids = {item["battle_id"] for item in page1["items"]}
+    page2_ids = {item["battle_id"] for item in page2["items"]}
+    assert page1_ids.isdisjoint(page2_ids)
+    _assert_desc_order(page1["items"])
+    _assert_desc_order(page2["items"])
+
+    response = client.get(
         "/pvp/log?limit=20",
         headers={"Authorization": f"Bearer {token}"},
     )
     assert response.status_code == 200, response.text
     body = response.json()
-    assert "items" in body
-    assert "next_cursor" in body
-
     items = body["items"]
     assert items
+    _assert_desc_order(items)
+
     for item in items:
         assert "battle_id" in item
         assert item["result"] in ("win", "loss")

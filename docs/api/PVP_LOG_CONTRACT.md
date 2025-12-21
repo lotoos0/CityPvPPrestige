@@ -9,6 +9,10 @@ Version: v1 (MVP)
 ## Endpoint
 GET /pvp/log?limit=20&cursor=<optional>
 
+Query params:
+- limit: integer (1..50)
+- cursor: opaque base64 JSON (optional)
+
 ---
 
 ## 200 OK - Success Response
@@ -30,6 +34,9 @@ GET /pvp/log?limit=20&cursor=<optional>
   "next_cursor": "opaque|string|null"
 }
 ```
+
+Example cursor (base64 JSON):
+`eyJjcmVhdGVkX2F0IjoiMjAyNS0xMi0yMVQxODo0MjowMCswMTowMCIsImJhdHRsZV9pZCI6IjU4MjZjNzYyLWEyMTAtNDM1YS05NzY4LTkxM2Q1Njg5YmQwMCJ9`
 
 Field semantics
 

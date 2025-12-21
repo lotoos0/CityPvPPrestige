@@ -1,6 +1,8 @@
+import base64
+import json
 import os
 import random
-from datetime import date, datetime, time, timedelta
+from datetime import date, datetime, time, timedelta, timezone
 from typing import Optional
 from uuid import UUID
 
@@ -112,20 +114,29 @@ def _normalize_result(result: str) -> str:
     return "loss" if result == "lose" else result
 
 
-def _serialize_cursor(created_at: datetime, log_id: UUID) -> str:
-    return f"{created_at.isoformat()}|{log_id}"
+def _encode_cursor(created_at: datetime, battle_id: UUID) -> str:
+    payload = {
+        "created_at": created_at.astimezone(timezone.utc).isoformat(),
+        "battle_id": str(battle_id),
+    }
+    raw = json.dumps(payload, separators=(",", ":"), ensure_ascii=True).encode("utf-8")
+    return base64.urlsafe_b64encode(raw).decode("ascii").rstrip("=")
 
 
-def _parse_cursor(cursor: str) -> tuple[datetime, UUID]:
-    parts = cursor.split("|", 1)
-    if len(parts) != 2:
-        raise HTTPException(status_code=400, detail="Invalid cursor")
-
+def _decode_cursor(cursor: str) -> tuple[datetime, UUID]:
+    pad = "=" * (-len(cursor) % 4)
     try:
-        cursor_time = datetime.fromisoformat(parts[0])
-        cursor_id = UUID(parts[1])
-    except ValueError as exc:
+        raw = base64.urlsafe_b64decode((cursor + pad).encode("ascii"))
+        obj = json.loads(raw.decode("utf-8"))
+        cursor_time = datetime.fromisoformat(obj["created_at"])
+        cursor_id = UUID(str(obj["battle_id"]))
+    except (ValueError, KeyError, json.JSONDecodeError) as exc:
         raise HTTPException(status_code=400, detail="Invalid cursor") from exc
+
+    if cursor_time.tzinfo is None:
+        cursor_time = cursor_time.replace(tzinfo=timezone.utc)
+    else:
+        cursor_time = cursor_time.astimezone(timezone.utc)
 
     return cursor_time, cursor_id
 
@@ -422,7 +433,7 @@ def log(
     )
 
     if cursor:
-        cursor_time, cursor_id = _parse_cursor(cursor)
+        cursor_time, cursor_id = _decode_cursor(cursor)
         query = query.filter(
             or_(
                 models.AttackLog.created_at < cursor_time,
@@ -473,8 +484,8 @@ def log(
         )
 
     next_cursor = None
-    if has_more and items:
-        last = items[-1]
-        next_cursor = _serialize_cursor(last.created_at, last.battle_id)
+    if has_more and logs:
+        last_log = logs[-1][0]
+        next_cursor = _encode_cursor(last_log.created_at, last_log.id)
 
     return {"items": items, "next_cursor": next_cursor}
