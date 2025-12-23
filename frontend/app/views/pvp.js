@@ -83,6 +83,11 @@ function formatDuration(seconds) {
   return `Ready in ${minutes}m ${remainder}s`;
 }
 
+function formatLosses(losses) {
+  if (!losses) return "0 Raiders, 0 Guardians";
+  return `${losses.raider} Raiders, ${losses.guardian} Guardians`;
+}
+
 function renderPvpHud(payload) {
   if (!payload || !payload.limits) return;
   const { limits, nightly_decay: nightlyDecay, cooldowns } = payload;
@@ -174,6 +179,21 @@ async function handleAttack(userId) {
     const result = await pvpApi.attack(token, userId);
     rankStatus.textContent = `Result: ${result.result} (Δ${result.prestige.delta})`;
 
+    const attackerLosses = result.losses?.attacker;
+    const defenderLosses = result.losses?.defender;
+    const totalLosses =
+      (attackerLosses?.raider || 0) +
+      (attackerLosses?.guardian || 0) +
+      (defenderLosses?.raider || 0) +
+      (defenderLosses?.guardian || 0);
+    if (totalLosses === 0) {
+      showToast("No units lost");
+    } else {
+      showToast(
+        `You lost: ${formatLosses(attackerLosses)}\nOpponent lost: ${formatLosses(defenderLosses)}`
+      );
+    }
+
     if (result.limits) {
       renderPvpHud({
         limits: result.limits,
@@ -191,7 +211,9 @@ async function handleAttack(userId) {
     state.setState({ city, user });
   } catch (error) {
     if (error?.status === 403 && error?.data?.error?.code === "INSUFFICIENT_ARMY") {
-      rankStatus.textContent = "Train units in Barracks to attack.";
+      showToast("Train units in Barracks to attack (min 10).", true);
+      rankStatus.textContent = "Train units in Barracks to attack (min 10).";
+      window.location.hash = "#/army";
     } else {
       rankStatus.textContent = error?.data?.detail || error?.data?.message || "Attack failed";
     }

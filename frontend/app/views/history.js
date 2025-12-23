@@ -72,9 +72,12 @@ function renderHistory(entries, append = false) {
   entries.forEach((entry) => {
     const isAttacker = entry.attacker_id === state.user?.id;
     const opponent = isAttacker ? entry.defender_email : entry.attacker_email;
-    const delta = isAttacker ? entry.prestige_delta_attacker : entry.prestige_delta_defender;
+    const delta = entry.prestige_delta;
     const outcome = delta >= 0 ? "Prestige up" : "Prestige down";
     const timestamp = new Date(entry.created_at).toLocaleString();
+    const youLost = isAttacker ? entry.units_lost_attacker : entry.units_lost_defender;
+    const opponentLost = isAttacker ? entry.units_lost_defender : entry.units_lost_attacker;
+    const lossesLine = `You lost: ${formatLosses(youLost)} | Opponent lost: ${formatLosses(opponentLost)}`;
 
     const item = document.createElement("div");
     item.className = "history-item";
@@ -82,9 +85,15 @@ function renderHistory(entries, append = false) {
       <div>
         <strong>${outcome} (${delta})</strong>
         <span>${isAttacker ? "Attacked" : "Defended"} vs ${opponent} • ${entry.result}</span>
+        <span>${lossesLine}</span>
       </div>
       <span>${timestamp}</span>
     `;
     attackLog.appendChild(item);
   });
+}
+
+function formatLosses(losses) {
+  if (!losses) return "0 Raiders, 0 Guardians";
+  return `${losses.raider} Raiders, ${losses.guardian} Guardians`;
 }
