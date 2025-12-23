@@ -53,6 +53,22 @@ class UpgradeRequest(BaseModel):
     y: int
 
 
+class BuildingLevelMeta(BaseModel):
+    level: int
+    effects: dict[str, int]
+    cost_gold: int
+
+
+class BuildingCatalogItem(BaseModel):
+    type: str
+    display_name: str
+    levels: list[BuildingLevelMeta]
+
+
+class BuildingCatalogResponse(BaseModel):
+    items: list[BuildingCatalogItem]
+
+
 class StatsOut(BaseModel):
     attack_power: int
     defense_power: int

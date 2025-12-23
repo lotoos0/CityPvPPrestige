@@ -9,6 +9,8 @@ from app import models, schemas
 from app.city_constants import (
     ALLOWED_MVP_BUILDING_TYPES,
     BASE_GOLD_CAP,
+    BUILDING_DISPLAY_NAMES,
+    BUILDING_EFFECTS,
     MAX_BUILDING_LEVEL,
     get_build_cost,
     get_effect_value,
@@ -360,3 +362,32 @@ def upgrade(
         prestige=current_user.prestige,
         buildings=buildings,
     )
+
+
+@router.get("/buildings/catalog", response_model=schemas.BuildingCatalogResponse)
+def get_buildings_catalog():
+    items = []
+    for building_type in sorted(ALLOWED_MVP_BUILDING_TYPES):
+        display_name = BUILDING_DISPLAY_NAMES.get(building_type, building_type)
+        levels = []
+        for level in range(1, MAX_BUILDING_LEVEL + 1):
+            effects = BUILDING_EFFECTS.get(building_type, {}).get(level, {})
+            cost = get_build_cost(building_type, level)
+            if cost is None:
+                continue
+            levels.append(
+                schemas.BuildingLevelMeta(
+                    level=level,
+                    effects=effects,
+                    cost_gold=cost,
+                )
+            )
+        items.append(
+            schemas.BuildingCatalogItem(
+                type=building_type,
+                display_name=display_name,
+                levels=levels,
+            )
+        )
+
+    return schemas.BuildingCatalogResponse(items=items)

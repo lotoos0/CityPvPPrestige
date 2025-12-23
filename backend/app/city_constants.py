@@ -78,6 +78,16 @@ BUILDING_COST_MULTIPLIERS = {
     "storage": 0.6,
 }
 
+BUILDING_DISPLAY_NAMES = {
+    "town_hall": "Town Hall",
+    "gold_mine": "Gold Mine",
+    "house": "House",
+    "barracks": "Barracks",
+    "wall": "Wall",
+    "tower": "Scout Tower",
+    "storage": "Storage",
+}
+
 TOWN_HALL_BUILD_COST = 0
 TOWN_HALL_UPGRADE_COSTS = {
     2: 2500,
