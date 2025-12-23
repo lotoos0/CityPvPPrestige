@@ -5,6 +5,7 @@ Browser-based city-builder PvP MVP focused on prestige ranking and async battles
 ## Requirements
 
 - Docker + Docker Compose
+- Python 3.12.x (backend; 3.13 not supported yet due to postgres driver wheels)
 - Python 3 (for static frontend server)
 
 ## Run backend (API + Postgres)
