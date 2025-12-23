@@ -5,8 +5,10 @@
 import { armyApi, barracksApi } from "../api.js";
 import { getToken } from "../auth.js";
 import { showToast } from "../components/toast.js";
+import { on } from "../state.js";
 
 let armyRefreshTimer = null;
+let offArmyRefresh = null;
 
 export async function armyView() {
   const token = getToken();
@@ -21,6 +23,12 @@ export async function armyView() {
 
   // Start army HUD
   startArmyHud();
+  refreshArmyAndQueue();
+  if (!offArmyRefresh) {
+    offArmyRefresh = on("army:refresh", () => {
+      refreshArmyAndQueue();
+    });
+  }
 
   // Setup training controls
   const trainSubmit = document.getElementById("train-submit");
@@ -38,6 +46,10 @@ export function stopArmyView() {
   if (armyRefreshTimer) {
     clearInterval(armyRefreshTimer);
     armyRefreshTimer = null;
+  }
+  if (offArmyRefresh) {
+    offArmyRefresh();
+    offArmyRefresh = null;
   }
 
   const armyRefreshBtn = document.getElementById("army-refresh");
@@ -127,6 +139,11 @@ async function refreshQueue() {
   }
 }
 
+function refreshArmyAndQueue() {
+  refreshArmy();
+  refreshQueue();
+}
+
 async function trainUnits() {
   setBarracksStatus("Training...");
   const unit = document.getElementById("train-unit").value;
@@ -168,10 +185,8 @@ function startArmyHud() {
   if (armyRefreshTimer) return;
   const armyRefreshBtn = document.getElementById("army-refresh");
   armyRefreshBtn.disabled = false;
-  refreshArmy();
-  refreshQueue();
+  refreshArmyAndQueue();
   armyRefreshTimer = setInterval(() => {
-    refreshArmy();
-    refreshQueue();
+    refreshArmyAndQueue();
   }, 10000);
 }

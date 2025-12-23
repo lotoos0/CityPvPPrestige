@@ -4,7 +4,7 @@
 
 import { pvpApi, rankApi, cityApi, statsApi, authApi } from "../api.js";
 import { getToken } from "../auth.js";
-import { state } from "../state.js";
+import { emit, state } from "../state.js";
 import { showToast } from "../components/toast.js";
 
 let pvpRefreshTimer = null;
@@ -193,6 +193,7 @@ async function handleAttack(userId) {
         `You lost: ${formatLosses(attackerLosses)}\nOpponent lost: ${formatLosses(defenderLosses)}`
       );
     }
+    emit("army:refresh");
 
     if (result.limits) {
       renderPvpHud({

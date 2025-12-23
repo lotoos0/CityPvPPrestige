@@ -44,3 +44,28 @@ class AppState {
 }
 
 export const state = new AppState();
+
+const listeners = new Map();
+
+export function on(event, fn) {
+  if (!listeners.has(event)) listeners.set(event, new Set());
+  listeners.get(event).add(fn);
+  return () => {
+    const set = listeners.get(event);
+    if (!set) return;
+    set.delete(fn);
+    if (set.size === 0) listeners.delete(event);
+  };
+}
+
+export function emit(event, payload = null) {
+  const set = listeners.get(event);
+  if (!set) return;
+  for (const fn of set) {
+    try {
+      fn(payload);
+    } catch (error) {
+      console.error("event handler error", event, error);
+    }
+  }
+}
