@@ -125,19 +125,11 @@
           <div id="barracks-queue" class="list"></div>
         </div>
         <div class="card">
-          <h2>Build</h2>
-          <label class="label" for="buildingType">Building type</label>
-          <select id="buildingType" class="input">
-            <option value="">Select building</option>
-            <option value="gold_mine">Gold Mine</option>
-            <option value="house">House</option>
-            <option value="power_plant">Power Plant</option>
-            <option value="barracks">Barracks</option>
-            <option value="wall">Wall</option>
-            <option value="tower">Tower</option>
-            <option value="storage">Storage</option>
-          </select>
-          <p class="hint">Click a tile to build. Level starts at 1.</p>
+          <h2>Tile</h2>
+          <div id="tilePanel">
+            <p id="tilePanelTitle" class="hint">Select a tile.</p>
+            <div id="tilePanelBody" class="status"></div>
+          </div>
           <div id="buildStatus" class="status"></div>
         </div>
       </section>

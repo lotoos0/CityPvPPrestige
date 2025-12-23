@@ -7,6 +7,9 @@ import { getToken } from "../auth.js";
 import { state } from "../state.js";
 import { showToast } from "../components/toast.js";
 
+let selectedTile = null;
+let buildingMap = new Map();
+
 export async function cityView() {
   const token = getToken();
   if (!token) return;
@@ -26,11 +29,14 @@ export async function cityView() {
   collectBtn.disabled = false;
   collectBtn.onclick = handleCollect;
 
-  // Setup build interaction
-  const buildingType = document.getElementById("buildingType");
   const buildStatus = document.getElementById("buildStatus");
-  buildStatus.textContent = "Ready to build.";
+  buildStatus.textContent = "";
   buildStatus.style.color = "#9fb0c9";
+
+  const gridEl = document.getElementById("grid");
+  gridEl.onclick = onGridClick;
+
+  renderTilePanel();
 }
 
 async function refreshCity() {
@@ -46,6 +52,7 @@ async function refreshCity() {
     renderStats(city);
     renderCombat(stats);
     renderGrid(city);
+    renderTilePanel();
   } catch (error) {
     showToast(error.message || "Failed to load city", true);
   }
@@ -91,7 +98,7 @@ function renderGrid(city) {
   const gridEl = document.getElementById("grid");
   gridEl.innerHTML = "";
 
-  const buildingMap = new Map();
+  buildingMap = new Map();
   city.buildings.forEach((b) => {
     buildingMap.set(`${b.x}:${b.y}`, b);
   });
@@ -101,6 +108,8 @@ function renderGrid(city) {
       const tile = document.createElement("button");
       tile.type = "button";
       tile.className = "tile";
+      tile.dataset.x = x;
+      tile.dataset.y = y;
 
       const building = buildingMap.get(`${x}:${y}`);
       if (building) {
@@ -110,45 +119,59 @@ function renderGrid(city) {
         tile.textContent = `${x},${y}`;
       }
 
-      tile.addEventListener("click", () => handleBuild(x, y, building));
+      if (selectedTile && selectedTile.x === x && selectedTile.y === y) {
+        tile.classList.add("selected");
+      }
       gridEl.appendChild(tile);
     }
   }
 }
 
-async function handleBuild(x, y, existing) {
-  const buildStatus = document.getElementById("buildStatus");
+function onGridClick(event) {
+  const tile = event.target.closest(".tile");
+  if (!tile) return;
 
-  if (existing) {
-    buildStatus.textContent = "Tile already occupied.";
-    buildStatus.style.color = "#ff8c6a";
+  const x = Number(tile.dataset.x);
+  const y = Number(tile.dataset.y);
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+
+  selectTile(x, y);
+}
+
+function selectTile(x, y) {
+  const gridEl = document.getElementById("grid");
+  const previous = gridEl.querySelector(".tile.selected");
+  if (previous) {
+    previous.classList.remove("selected");
+  }
+
+  const tile = gridEl.querySelector(`.tile[data-x="${x}"][data-y="${y}"]`);
+  if (tile) {
+    tile.classList.add("selected");
+  }
+
+  selectedTile = { x, y };
+  renderTilePanel();
+}
+
+function renderTilePanel() {
+  const title = document.getElementById("tilePanelTitle");
+  const body = document.getElementById("tilePanelBody");
+
+  if (!selectedTile) {
+    title.textContent = "Select a tile.";
+    body.textContent = "";
     return;
   }
 
-  const buildingType = document.getElementById("buildingType");
-  const type = buildingType.value;
-
-  if (!type) {
-    buildStatus.textContent = "Select a building type first.";
-    buildStatus.style.color = "#ff8c6a";
-    return;
-  }
-
-  try {
-    const token = getToken();
-    const updated = await cityApi.build(token, type, x, y);
-    const stats = await statsApi.fetch(token);
-
-    state.setState({ city: updated });
-    renderStats(updated);
-    renderGrid(updated);
-    renderCombat(stats);
-
-    buildStatus.textContent = `Placed ${type} at ${x},${y}.`;
-    buildStatus.style.color = "#9fb0c9";
-  } catch (error) {
-    buildStatus.textContent = error.message || "Build failed";
-    buildStatus.style.color = "#ff8c6a";
+  const key = `${selectedTile.x}:${selectedTile.y}`;
+  const building = buildingMap.get(key);
+  title.textContent = `Tile (${selectedTile.x}, ${selectedTile.y})`;
+  if (building) {
+    const label = building.type.replace("_", " ").toUpperCase();
+    body.textContent = `Occupied: ${label} L${building.level}`;
+  } else {
+    body.textContent = "Empty tile.";
   }
 }
 
