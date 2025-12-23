@@ -152,6 +152,15 @@ def build(
 
     city = get_or_create_city(db, current_user)
 
+    buildings = (
+        db.query(models.Building)
+        .filter(models.Building.city_id == city.id)
+        .all()
+    )
+    now = datetime.now(timezone.utc)
+    apply_city_production(city, buildings, now)
+    db.commit()
+
     if (
         payload.x < 0
         or payload.y < 0
@@ -168,14 +177,9 @@ def build(
             },
         )
 
-    existing = (
-        db.query(models.Building)
-        .filter(
-            models.Building.city_id == city.id,
-            models.Building.x == payload.x,
-            models.Building.y == payload.y,
-        )
-        .first()
+    existing = next(
+        (b for b in buildings if b.x == payload.x and b.y == payload.y),
+        None,
     )
     if existing:
         return JSONResponse(
@@ -261,6 +265,15 @@ def upgrade(
 ):
     city = get_or_create_city(db, current_user)
 
+    buildings = (
+        db.query(models.Building)
+        .filter(models.Building.city_id == city.id)
+        .all()
+    )
+    now = datetime.now(timezone.utc)
+    apply_city_production(city, buildings, now)
+    db.commit()
+
     if (
         payload.x < 0
         or payload.y < 0
@@ -277,14 +290,9 @@ def upgrade(
             },
         )
 
-    building = (
-        db.query(models.Building)
-        .filter(
-            models.Building.city_id == city.id,
-            models.Building.x == payload.x,
-            models.Building.y == payload.y,
-        )
-        .first()
+    building = next(
+        (b for b in buildings if b.x == payload.x and b.y == payload.y),
+        None,
     )
     if not building:
         return JSONResponse(

@@ -107,3 +107,58 @@ def test_city_production_accrues_on_get() -> None:
     assert city.last_collected_at >= before_request
 
     cleanup_test_data(user_id)
+
+
+def test_city_production_clamps_to_cap() -> None:
+    client = TestClient(app)
+    suffix = uuid.uuid4().hex[:8]
+    email = f"city_cap_{suffix}@example.com"
+    password = "TestPass123!"
+
+    user_id = register_user(client, email, password)
+    token = login_user(client, email, password)
+
+    long_ago = datetime.now(timezone.utc) - timedelta(hours=100)
+    seed_city(user_id, long_ago)
+    create_building(user_id, "gold_mine", 1, 1, 1)
+
+    db = SessionLocal()
+    try:
+        city = db.query(models.City).filter(models.City.user_id == user_id).first()
+        assert city is not None
+        city.gold = 199
+        db.commit()
+    finally:
+        db.close()
+
+    response = client.get("/city", headers={"Authorization": f"Bearer {token}"})
+    assert response.status_code == 200, response.text
+    assert response.json()["gold"] == 200
+
+    cleanup_test_data(user_id)
+
+
+def test_city_production_is_idempotent_on_double_get() -> None:
+    client = TestClient(app)
+    suffix = uuid.uuid4().hex[:8]
+    email = f"city_double_{suffix}@example.com"
+    password = "TestPass123!"
+
+    user_id = register_user(client, email, password)
+    token = login_user(client, email, password)
+
+    two_hours_ago = datetime.now(timezone.utc) - timedelta(hours=2)
+    seed_city(user_id, two_hours_ago)
+    create_building(user_id, "gold_mine", 1, 3, 3)
+
+    response = client.get("/city", headers={"Authorization": f"Bearer {token}"})
+    assert response.status_code == 200, response.text
+    first_gold = response.json()["gold"]
+
+    response = client.get("/city", headers={"Authorization": f"Bearer {token}"})
+    assert response.status_code == 200, response.text
+    second_gold = response.json()["gold"]
+
+    assert second_gold == first_gold
+
+    cleanup_test_data(user_id)
