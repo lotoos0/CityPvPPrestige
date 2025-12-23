@@ -24,11 +24,13 @@ from app.pvp_constants import (
     EXPECTED_WIN_MAX,
     EXPECTED_WIN_MIN,
     GLOBAL_ATTACK_COOLDOWN_SEC,
+    Losses,
     PRESTIGE_GAIN_CAP,
     PRESTIGE_LOSS_CAP,
     PVP_MIN_ARMY_UNITS,
     SERVER_TZ,
 )
+from app.pvp_losses import apply_losses, calc_loss_rates, get_defense_factor
 from app.routes.auth import get_current_user
 
 router = APIRouter(prefix="/pvp", tags=["pvp"])
@@ -81,6 +83,41 @@ def compute_prestige_delta(expected_win: float, result: str) -> int:
     if result == "win":
         return round(BASE_GAIN * (1 + (1 - expected_win)))
     return -round(BASE_LOSS * (1 + expected_win))
+
+
+def get_units_map(db: Session, user_id: UUID, lock: bool = False) -> dict[str, int]:
+    """
+    Get user's unit counts as a dict, with FOR UPDATE lock if requested.
+    Always returns full shape with both raider and guardian.
+    """
+    query = db.query(models.UserUnit).join(
+        models.UnitType, models.UserUnit.unit_type_id == models.UnitType.id
+    ).filter(models.UserUnit.user_id == user_id)
+
+    if lock:
+        query = query.with_for_update()
+
+    units = query.all()
+
+    # Build map
+    unit_map = {"raider": 0, "guardian": 0}
+    for unit in units:
+        unit_map[unit.unit_type.code] = max(0, unit.qty)
+
+    return unit_map
+
+
+def get_buildings_by_type(buildings: list[models.Building]) -> dict[str, int]:
+    """
+    Convert list of buildings to dict of building_type -> max_level.
+    """
+    by_type: dict[str, int] = {}
+    for b in buildings:
+        if b.type not in by_type:
+            by_type[b.type] = b.level
+        else:
+            by_type[b.type] = max(by_type[b.type], b.level)
+    return by_type
 
 
 def get_or_create_daily_stats(
@@ -265,6 +302,25 @@ def attack(
     attack_power, _ = compute_stats(attacker_buildings)
     _, defense_power = compute_stats(defender_buildings)
 
+    # Lock units with ordering (smaller user_id first) to prevent deadlocks
+    user_ids_ordered = sorted([attacker.id, defender.id])
+
+    # Lock first user (smaller id)
+    first_id = user_ids_ordered[0]
+    first_units = get_units_map(db, first_id, lock=True)
+
+    # Lock second user (larger id)
+    second_id = user_ids_ordered[1]
+    second_units = get_units_map(db, second_id, lock=True)
+
+    # Assign to attacker/defender based on who's who
+    if attacker.id == first_id:
+        attacker_units = first_units
+        defender_units = second_units
+    else:
+        attacker_units = second_units
+        defender_units = first_units
+
     attack_effective = attack_power * random.uniform(0.9, 1.1)
     defense_effective = defense_power * random.uniform(0.9, 1.1)
 
@@ -301,6 +357,48 @@ def attack(
     attacker.prestige += attacker_delta
     attacker.last_pvp_at = now
 
+    # Calculate unit losses (V2-B)
+    defender_buildings_by_type = get_buildings_by_type(defender_buildings)
+    defense_factor = get_defense_factor(defender_buildings_by_type)
+
+    att_rate, def_rate = calc_loss_rates(expected_win, result, defense_factor)
+    lost_att = apply_losses(attacker_units, att_rate)
+    lost_def = apply_losses(defender_units, def_rate)
+
+    # Update user_units inventory atomically
+    for unit_code in ("raider", "guardian"):
+        if lost_att[unit_code] > 0:
+            unit_type = db.query(models.UnitType).filter(models.UnitType.code == unit_code).first()
+            if unit_type:
+                user_unit = (
+                    db.query(models.UserUnit)
+                    .filter(
+                        models.UserUnit.user_id == attacker.id,
+                        models.UserUnit.unit_type_id == unit_type.id,
+                    )
+                    .with_for_update()
+                    .first()
+                )
+                if user_unit:
+                    user_unit.qty = max(0, user_unit.qty - lost_att[unit_code])
+                    user_unit.updated_at = now
+
+        if lost_def[unit_code] > 0:
+            unit_type = db.query(models.UnitType).filter(models.UnitType.code == unit_code).first()
+            if unit_type:
+                user_unit = (
+                    db.query(models.UserUnit)
+                    .filter(
+                        models.UserUnit.user_id == defender.id,
+                        models.UserUnit.unit_type_id == unit_type.id,
+                    )
+                    .with_for_update()
+                    .first()
+                )
+                if user_unit:
+                    user_unit.qty = max(0, user_unit.qty - lost_def[unit_code])
+                    user_unit.updated_at = now
+
     log = models.AttackLog(
         attacker_id=attacker.id,
         defender_id=defender.id,
@@ -312,6 +410,8 @@ def attack(
         expected_win=expected_win,
         attacker_attack_power=attack_power,
         defender_defense_power=defense_power,
+        units_lost_attacker=lost_att,
+        units_lost_defender=lost_def,
     )
     db.add(log)
     db.flush()
@@ -361,6 +461,16 @@ def attack(
             delta=attacker_delta,
             attacker_before=attacker.prestige - attacker_delta,
             attacker_after=attacker.prestige,
+        ),
+        losses=schemas.PvPLossesOut(
+            attacker=schemas.UnitLossesOut(
+                raider=lost_att["raider"],
+                guardian=lost_att["guardian"],
+            ),
+            defender=schemas.UnitLossesOut(
+                raider=lost_def["raider"],
+                guardian=lost_def["guardian"],
+            ),
         ),
         limits=schemas.PvpLimitsOut(
             reset_at=get_reset_at(now),
@@ -479,6 +589,19 @@ def log(
             else log_entry.prestige_delta_defender
         )
 
+        # Normalize losses - ensure full shape even for old logs
+        att_losses = log_entry.units_lost_attacker or {}
+        def_losses = log_entry.units_lost_defender or {}
+
+        normalized_att = schemas.UnitLossesOut(
+            raider=att_losses.get("raider", 0),
+            guardian=att_losses.get("guardian", 0),
+        )
+        normalized_def = schemas.UnitLossesOut(
+            raider=def_losses.get("raider", 0),
+            guardian=def_losses.get("guardian", 0),
+        )
+
         items.append(
             schemas.PvPLogItemOut(
                 battle_id=log_entry.id,
@@ -489,6 +612,8 @@ def log(
                 result=result,
                 prestige_delta=prestige_delta,
                 expected_win=log_entry.expected_win,
+                units_lost_attacker=normalized_att,
+                units_lost_defender=normalized_def,
                 created_at=log_entry.created_at,
             )
         )

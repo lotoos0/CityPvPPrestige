@@ -151,7 +151,8 @@ async def test_parallel_attacks_increment_attacks_used():
     attacker_id = register_user(client, attacker_email, password)
     defender_id = register_user(client, defender_email, password)
     token = login_user(client, attacker_email, password)
-    seed_units(attacker_id, 10)
+    seed_units(attacker_id, 100)
+    seed_units(defender_id, 100)
 
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as async_client:

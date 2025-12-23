@@ -42,6 +42,17 @@ X-Test-* (blocked outside APP_ENV=test)
     "attacker_after": 1312
   },
 
+  "losses": {
+    "attacker": {
+      "raider": 3,
+      "guardian": 1
+    },
+    "defender": {
+      "raider": 5,
+      "guardian": 2
+    }
+  },
+
   "limits": {
     "reset_at": "2025-12-20T00:00:00+01:00",
     "attacks_used": 7,
@@ -71,6 +82,10 @@ Field semantics
 battle_id - unique ID of the PvP battle log entry.
 
 expected_win - value used in prestige calculation (for transparency/UI tooltips).
+
+losses.attacker / losses.defender - unit losses for attacker and defender.
+Both keys (raider, guardian) are ALWAYS present (>= 0).
+Losses are calculated from total inventory, not declared army composition.
 
 prestige.delta - final applied delta AFTER clamps/caps.
 

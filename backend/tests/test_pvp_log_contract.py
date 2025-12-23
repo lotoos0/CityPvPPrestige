@@ -215,6 +215,18 @@ def test_pvp_log_contract() -> None:
             assert 0.0 <= item["expected_win"] <= 1.0
         assert "created_at" in item
 
+        # Test D: losses fields are normalized (always present with full shape)
+        assert "units_lost_attacker" in item
+        assert "units_lost_defender" in item
+        assert "raider" in item["units_lost_attacker"]
+        assert "guardian" in item["units_lost_attacker"]
+        assert "raider" in item["units_lost_defender"]
+        assert "guardian" in item["units_lost_defender"]
+        assert item["units_lost_attacker"]["raider"] >= 0
+        assert item["units_lost_attacker"]["guardian"] >= 0
+        assert item["units_lost_defender"]["raider"] >= 0
+        assert item["units_lost_defender"]["guardian"] >= 0
+
     attacker_view = next(
         entry for entry in items if entry["attacker_id"] == attacker_id
     )

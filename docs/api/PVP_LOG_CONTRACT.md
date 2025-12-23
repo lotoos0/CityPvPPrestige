@@ -29,6 +29,14 @@ Query params:
       "result": "win|loss",
       "prestige_delta": 12,
       "expected_win": 0.63,
+      "units_lost_attacker": {
+        "raider": 2,
+        "guardian": 0
+      },
+      "units_lost_defender": {
+        "raider": 3,
+        "guardian": 1
+      },
       "created_at": "2025-12-21T18:42:00+01:00"
     }
   ],
@@ -44,6 +52,10 @@ Field semantics
 prestige_delta - final applied delta for the current user.
 
 expected_win - win probability snapshot for the attacker at the moment of battle (null for legacy logs).
+
+units_lost_attacker / units_lost_defender - unit losses for attacker and defender.
+Both fields are ALWAYS present. Both keys (raider, guardian) are ALWAYS present (>= 0).
+For legacy logs (before V2-B), both fields return {"raider": 0, "guardian": 0}.
 
 next_cursor - opaque pagination cursor (null if no more).
 

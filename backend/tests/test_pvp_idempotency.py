@@ -38,7 +38,8 @@ def test_pvp_attack_idempotency():
     attacker_id = register_user(client, attacker_email, password)
     defender_id = register_user(client, defender_email, password)
     token = login_user(client, attacker_email, password)
-    seed_units(attacker_id, 10)
+    seed_units(attacker_id, 100)
+    seed_units(defender_id, 100)
 
     idempotency_key = str(uuid.uuid4())
     headers = {

@@ -110,6 +110,16 @@ class PvPLimitsResponseOut(BaseModel):
     cooldowns: Optional[PvPCooldownsOut] = None
 
 
+class UnitLossesOut(BaseModel):
+    raider: int = Field(ge=0)
+    guardian: int = Field(ge=0)
+
+
+class PvPLossesOut(BaseModel):
+    attacker: UnitLossesOut
+    defender: UnitLossesOut
+
+
 class PvPAttackResponseOut(BaseModel):
     battle_id: UUID
     attacker_id: UUID
@@ -117,6 +127,7 @@ class PvPAttackResponseOut(BaseModel):
     result: Literal["win", "loss"]
     expected_win: float = Field(ge=0.0, le=1.0)
     prestige: PvPPrestigeOut
+    losses: PvPLossesOut
     limits: PvpLimitsOut
     cooldowns: PvPCooldownsOut
     messages: list[MessageCode]
@@ -189,6 +200,8 @@ class PvPLogItemOut(BaseModel):
     result: str
     prestige_delta: int
     expected_win: Optional[float] = None
+    units_lost_attacker: UnitLossesOut
+    units_lost_defender: UnitLossesOut
     created_at: datetime
 
 
