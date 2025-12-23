@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app import models, schemas
 from app.city_constants import (
     ALLOWED_MVP_BUILDING_TYPES,
+    BASE_GOLD_CAP,
     MAX_BUILDING_LEVEL,
     get_build_cost,
     get_effect_value,
@@ -15,10 +16,9 @@ from app.city_constants import (
 )
 from app.db import get_db
 from app.routes.auth import get_current_user
+from app.city_production import apply_city_production
 
 router = APIRouter(prefix="/city", tags=["city"])
-
-BASE_GOLD_CAP = 200
 
 
 def get_or_create_city(db: Session, user: models.User) -> models.City:
@@ -57,6 +57,9 @@ def get_city(
         .filter(models.Building.city_id == city.id)
         .all()
     )
+    now = datetime.now(timezone.utc)
+    apply_city_production(city, buildings, now)
+    db.commit()
 
     return schemas.CityOut(
         id=city.id,

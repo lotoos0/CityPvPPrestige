@@ -1,6 +1,7 @@
 from typing import Optional
 
 MAX_BUILDING_LEVEL = 3
+BASE_GOLD_CAP = 200
 
 BUILDING_TYPE_ALIASES = {
     "scout_tower": "tower",
