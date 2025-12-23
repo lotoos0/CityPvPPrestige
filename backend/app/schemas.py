@@ -48,6 +48,11 @@ class BuildRequest(BaseModel):
     y: int
 
 
+class UpgradeRequest(BaseModel):
+    x: int
+    y: int
+
+
 class StatsOut(BaseModel):
     attack_power: int
     defense_power: int
