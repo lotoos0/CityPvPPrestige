@@ -8,6 +8,7 @@ import { emit, state } from "../state.js";
 import { showToast } from "../components/toast.js";
 
 let pvpRefreshTimer = null;
+let lastSameTargetAvailableAt = null;
 
 export async function pvpView() {
   const token = getToken();
@@ -114,8 +115,11 @@ function renderPvpHud(payload) {
   document.getElementById("pvpGainRow").innerHTML = `Prestige gain today: <strong>${limits.prestige_gain_today}</strong> / left <strong>${limits.prestige_gain_left}</strong>`;
   document.getElementById("pvpLossRow").innerHTML = `Prestige loss today: <strong>${limits.prestige_loss_today}</strong> / protected left <strong>${limits.prestige_loss_left}</strong>`;
 
-  const globalLeft = secondsLeft(cooldowns?.global_available_at ?? null);
-  const targetLeft = secondsLeft(cooldowns?.same_target_available_at ?? null);
+  const globalLeft =
+    cooldowns?.global_remaining_sec ?? secondsLeft(cooldowns?.global_available_at ?? null);
+  const cachedSameTarget = lastSameTargetAvailableAt;
+  const sameTargetAvailableAt = cooldowns?.same_target_available_at ?? cachedSameTarget;
+  const targetLeft = secondsLeft(sameTargetAvailableAt ?? null);
 
   document.getElementById("pvpGlobalCooldown").innerHTML = `Global cooldown: <strong>${formatDuration(globalLeft)}</strong>`;
   document.getElementById("pvpTargetCooldown").innerHTML = `Same target cooldown: <strong>${formatDuration(targetLeft)}</strong>`;
@@ -178,6 +182,10 @@ async function handleAttack(userId) {
     const token = getToken();
     const result = await pvpApi.attack(token, userId);
     rankStatus.textContent = `Result: ${result.result} (Δ${result.prestige.delta})`;
+
+    if (result.cooldowns?.same_target_available_at) {
+      lastSameTargetAvailableAt = result.cooldowns.same_target_available_at;
+    }
 
     const attackerLosses = result.losses?.attacker;
     const defenderLosses = result.losses?.defender;
