@@ -71,6 +71,8 @@ class AttackLog(Base):
     expected_win = Column(Float, nullable=True)
     attacker_attack_power = Column(Integer, nullable=True)
     defender_defense_power = Column(Integer, nullable=True)
+    units_lost_attacker = Column(JSON, nullable=False, server_default=text("jsonb_build_object('raider', 0, 'guardian', 0)"))
+    units_lost_defender = Column(JSON, nullable=False, server_default=text("jsonb_build_object('raider', 0, 'guardian', 0)"))
     season_id = Column(UUID(as_uuid=True), ForeignKey("seasons.id"), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
