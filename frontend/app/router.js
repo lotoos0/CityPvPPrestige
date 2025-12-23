@@ -71,6 +71,9 @@ class Router {
 
     this.currentRoute = path;
     await route.handler();
+
+    // Update UI elements after route change
+    this.onRouteChange?.();
   }
 
   /**

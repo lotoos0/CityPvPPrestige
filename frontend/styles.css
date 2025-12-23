@@ -352,6 +352,14 @@ select {
   gap: 12px;
 }
 
+/* Hide sections by default - router will control visibility */
+.hud,
+.city,
+.ranking,
+.history {
+  display: none;
+}
+
 @media (max-width: 720px) {
   .topbar {
     flex-direction: column;

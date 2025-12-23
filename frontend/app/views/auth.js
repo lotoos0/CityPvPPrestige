@@ -3,7 +3,7 @@
  */
 
 import { authApi, setApiBase, getApiBase } from "../api.js";
-import { setToken, getToken } from "../auth.js";
+import { setToken, getToken, updateTopbarLogout } from "../auth.js";
 import { router } from "../router.js";
 import { showToast } from "../components/toast.js";
 
@@ -76,6 +76,7 @@ export async function authView() {
     logoutBtn.addEventListener("click", () => {
       setToken(null);
       logoutBtn.disabled = true;
+      updateTopbarLogout();
       showToast("Logged out");
       router.navigate("/");
     });

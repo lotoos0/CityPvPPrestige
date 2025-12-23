@@ -36,3 +36,27 @@ export function isAuthenticated() {
 export function logout() {
   setToken(null);
 }
+
+/**
+ * Update topbar logout button visibility
+ */
+export function updateTopbarLogout() {
+  const topbarLogoutBtn = document.getElementById("topbarLogoutBtn");
+  if (topbarLogoutBtn) {
+    topbarLogoutBtn.style.display = isAuthenticated() ? "inline-block" : "none";
+  }
+}
+
+/**
+ * Initialize topbar logout button
+ */
+export function initTopbarLogout(router) {
+  const topbarLogoutBtn = document.getElementById("topbarLogoutBtn");
+  if (topbarLogoutBtn) {
+    topbarLogoutBtn.addEventListener("click", () => {
+      logout();
+      updateTopbarLogout();
+      router.navigate("/");
+    });
+  }
+}

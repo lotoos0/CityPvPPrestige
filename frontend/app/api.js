@@ -141,8 +141,12 @@ export const pvpApi = {
     );
   },
 
-  async log(token) {
-    return apiGet("/pvp/log", { Authorization: `Bearer ${token}` });
+  async log(token, cursor = null, limit = 20) {
+    const params = new URLSearchParams({ limit: limit.toString() });
+    if (cursor) {
+      params.set("cursor", cursor);
+    }
+    return apiGet(`/pvp/log?${params}`, { Authorization: `Bearer ${token}` });
   },
 };
 

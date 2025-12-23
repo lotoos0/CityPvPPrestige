@@ -4,7 +4,7 @@
  */
 
 import { router } from "./router.js";
-import { isAuthenticated, getToken } from "./auth.js";
+import { isAuthenticated, getToken, initTopbarLogout, updateTopbarLogout } from "./auth.js";
 import { authView } from "./views/auth.js";
 import { cityView } from "./views/city.js";
 import { pvpView, stopPvpView } from "./views/pvp.js";
@@ -13,6 +13,12 @@ import { historyView } from "./views/history.js";
 
 // Set auth guard
 router.setAuthGuard(isAuthenticated);
+
+// Initialize topbar logout button
+initTopbarLogout(router);
+
+// Update topbar on route change
+router.onRouteChange = updateTopbarLogout;
 
 // Register routes
 router.register("/", authView, false);

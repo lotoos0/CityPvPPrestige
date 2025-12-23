@@ -6,6 +6,9 @@ import { pvpApi } from "../api.js";
 import { getToken } from "../auth.js";
 import { state } from "../state.js";
 
+let nextCursor = null;
+let initialized = false;
+
 export async function historyView() {
   const token = getToken();
   if (!token) return;
@@ -17,28 +20,52 @@ export async function historyView() {
   document.querySelector(".ranking").style.display = "none";
   document.querySelector(".history").style.display = "block";
 
-  // Load attack history
-  await refreshHistory();
+  // Initialize load more button (only once)
+  if (!initialized) {
+    initialized = true;
+    const loadMoreBtn = document.getElementById("historyLoadMore");
+    loadMoreBtn.addEventListener("click", handleLoadMore);
+  }
+
+  // Load initial history
+  nextCursor = null;
+  await refreshHistory(false);
 }
 
-async function refreshHistory() {
+async function refreshHistory(append = false) {
   const historyStatus = document.getElementById("historyStatus");
+  const loadMoreBtn = document.getElementById("historyLoadMore");
+
   try {
     const token = getToken();
-    const entries = await pvpApi.log(token);
-    renderHistory(entries);
-    historyStatus.textContent = "";
+    const response = await pvpApi.log(token, append ? nextCursor : null);
+    renderHistory(response.items || [], append);
+    nextCursor = response.next_cursor || null;
+
+    // Show/hide load more button
+    loadMoreBtn.style.display = nextCursor ? "inline-block" : "none";
+    historyStatus.textContent = `Loaded ${response.items?.length || 0} entries`;
   } catch (error) {
     historyStatus.textContent = error.message || "Failed to load history";
+    loadMoreBtn.style.display = "none";
   }
 }
 
-function renderHistory(entries) {
+async function handleLoadMore() {
+  await refreshHistory(true);
+}
+
+function renderHistory(entries, append = false) {
   const attackLog = document.getElementById("attackLog");
-  attackLog.innerHTML = "";
+
+  if (!append) {
+    attackLog.innerHTML = "";
+  }
 
   if (!entries || entries.length === 0) {
-    attackLog.innerHTML = "<p>No battles yet.</p>";
+    if (!append) {
+      attackLog.innerHTML = "<p>No battles yet.</p>";
+    }
     return;
   }
 
