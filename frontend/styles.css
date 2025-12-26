@@ -115,6 +115,8 @@ body {
   font-size: 11px;
   color: var(--muted);
   min-width: 86px;
+  position: relative;
+  overflow: hidden;
 }
 
 .resource-pill strong {
@@ -122,6 +124,32 @@ body {
   color: var(--text);
   letter-spacing: 0;
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6);
+}
+
+.gold-delta {
+  position: absolute;
+  right: 10px;
+  bottom: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #f6c453;
+  text-shadow: 0 0 6px rgba(246, 196, 83, 0.7);
+  animation: floatUp 1.2s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes floatUp {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-18px);
+  }
 }
 
 .app-shell {

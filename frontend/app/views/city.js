@@ -240,12 +240,17 @@ function updateTopbarStats(city) {
   const pop = document.getElementById("topbarPop");
   const power = document.getElementById("topbarPower");
   const prestige = document.getElementById("topbarPrestige");
+  const goldPill = gold?.closest(".resource-pill");
 
   if (gold) gold.textContent = city.gold;
   if (goldCap) goldCap.textContent = getGoldCap(city);
   if (pop) pop.textContent = city.pop;
   if (power) power.textContent = city.power;
   if (prestige) prestige.textContent = city.prestige;
+
+  if (goldPill) {
+    goldPill.dataset.value = city.gold;
+  }
 }
 
 function getGoldCap(city) {
@@ -402,6 +407,7 @@ async function handleCollect() {
     const delta = afterGold - beforeGold;
 
     if (delta > 0) {
+      showGoldDelta(delta);
       showToast(`Collected +${delta} gold`);
       buildStatus.textContent = `Collected +${delta} gold.`;
       buildStatus.style.color = "#9fb0c9";
@@ -414,4 +420,18 @@ async function handleCollect() {
     buildStatus.textContent = error.message || "Collect failed";
     buildStatus.style.color = "#ff8c6a";
   }
+}
+
+function showGoldDelta(amount) {
+  const gold = document.getElementById("topbarGold");
+  const pill = gold?.closest(".resource-pill");
+  if (!pill) return;
+
+  const delta = document.createElement("span");
+  delta.className = "gold-delta";
+  delta.textContent = `+${amount}`;
+  pill.appendChild(delta);
+  delta.addEventListener("animationend", () => {
+    delta.remove();
+  });
 }

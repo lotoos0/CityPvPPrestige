@@ -44,6 +44,7 @@
 - Introduced **FOE-like layout** with resource topbar, sidebar navigation, and game-style toasts
 - Refined **FOE-like chrome** with heavier panels, bevels, and material styling
 - Added **tile level badges** and upgrade indicators for city grid readability
+- Added **gold delta animation** on collect to reinforce resource gains
 
 ### Infrastructure & Quality
 - Pinned backend to **Python 3.12** for reproducible installs
