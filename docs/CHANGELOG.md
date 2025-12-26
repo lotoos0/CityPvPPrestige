@@ -54,6 +54,7 @@
 - Added **gold delta animation** on collect to reinforce resource gains
 - Added **disabled upgrade state** with tooltip reason for insufficient gold or max level
 - Switched **city grid to isometric layout** (placeholder tiles, no sprites)
+- Added **debug label toggle** to reduce visual noise in isometric grid
 
 ### Infrastructure & Quality
 - Pinned backend to **Python 3.12** for reproducible installs

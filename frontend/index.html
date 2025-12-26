@@ -176,7 +176,12 @@
           <section class="card city" aria-label="City grid">
             <div class="city-header">
               <h2>City Grid</h2>
-              <p class="hint">12x12. One building per tile.</p>
+              <div class="city-controls">
+                <label class="toggle">
+                  <input type="checkbox" id="toggleDebugLabels" />
+                  <span>Show debug labels</span>
+                </label>
+              </div>
             </div>
             <div id="grid" class="grid"></div>
           </section>

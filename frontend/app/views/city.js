@@ -16,6 +16,7 @@ let catalogLoaded = false;
 const BASE_GOLD_CAP = 200;
 const TILE_WIDTH = 80;
 const TILE_HEIGHT = 40;
+let showDebugLabels = false;
 
 export async function cityView() {
   const token = getToken();
@@ -42,6 +43,16 @@ export async function cityView() {
 
   const gridEl = document.getElementById("grid");
   gridEl.onclick = onGridClick;
+
+  const debugToggle = document.getElementById("toggleDebugLabels");
+  if (debugToggle) {
+    debugToggle.checked = showDebugLabels;
+    debugToggle.onchange = () => {
+      showDebugLabels = debugToggle.checked;
+      renderGrid(state.city);
+      renderTilePanel();
+    };
+  }
 
   renderTilePanel();
 }
@@ -121,10 +132,12 @@ function renderCombat(stats) {
 }
 
 function renderGrid(city) {
+  if (!city) return;
   const gridEl = document.getElementById("grid");
   gridEl.innerHTML = "";
   gridEl.style.width = `${city.grid_size * TILE_WIDTH}px`;
   gridEl.style.height = `${city.grid_size * TILE_HEIGHT}px`;
+  gridEl.classList.toggle("debug", showDebugLabels);
 
   buildingMap = new Map();
   city.buildings.forEach((b) => {
@@ -148,15 +161,17 @@ function renderGrid(city) {
       const building = buildingMap.get(`${x}:${y}`);
       if (building) {
         tile.classList.add("filled");
-        const label = document.createElement("span");
-        label.className = "tile-label";
-        label.textContent = building.type.replace("_", " ").toUpperCase();
+        if (showDebugLabels) {
+          const label = document.createElement("span");
+          label.className = "tile-label";
+          label.textContent = building.type.replace("_", " ").toUpperCase();
+          tile.appendChild(label);
+        }
 
         const levelBadge = document.createElement("span");
         levelBadge.className = "tile-badge level";
         levelBadge.textContent = `L${building.level}`;
 
-        tile.appendChild(label);
         tile.appendChild(levelBadge);
 
         if (building.level < 3 && state.city) {
@@ -169,10 +184,12 @@ function renderGrid(city) {
           }
         }
       } else {
-        const coords = document.createElement("span");
-        coords.className = "tile-coords";
-        coords.textContent = `${x},${y}`;
-        tile.appendChild(coords);
+        if (showDebugLabels) {
+          const coords = document.createElement("span");
+          coords.className = "tile-coords";
+          coords.textContent = `${x},${y}`;
+          tile.appendChild(coords);
+        }
       }
 
       if (selectedTile && selectedTile.x === x && selectedTile.y === y) {
