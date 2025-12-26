@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## city-loop-v1.1
+
+### Added
+- Gold collect feedback (+X animation)
+- Disabled upgrade button with clear reasons
+- Grid badges for building type and level
+
 ### City Building
 - Added **grid-based building system** with tile selection and action panel (frontend)
 - Enabled **building placement and upgrades** in city view using catalog-based costs
