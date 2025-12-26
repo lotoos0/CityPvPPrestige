@@ -60,6 +60,22 @@ class Building(Base):
     placed_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 
+class BuildingOccupancy(Base):
+    __tablename__ = "building_occupancy"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    city_id = Column(UUID(as_uuid=True), ForeignKey("cities.id"), nullable=False)
+    building_id = Column(UUID(as_uuid=True), ForeignKey("buildings.id"), nullable=False)
+    x = Column(Integer, nullable=False)
+    y = Column(Integer, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("city_id", "x", "y", name="uq_building_occupancy_city_tile"),
+        Index("ix_building_occupancy_city_id", "city_id"),
+        Index("ix_building_occupancy_building_id", "building_id"),
+    )
+
+
 class AttackLog(Base):
     __tablename__ = "attack_logs"
 
