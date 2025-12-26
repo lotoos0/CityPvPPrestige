@@ -513,12 +513,13 @@ select {
   position: relative;
   margin-top: 16px;
   min-height: 320px;
+  overflow: visible;
 }
 
 .tile {
   position: absolute;
-  width: 80px;
-  height: 40px;
+  width: var(--tile-w, 128px);
+  height: var(--tile-h, 64px);
   border: none;
   background: transparent;
   display: flex;
@@ -530,6 +531,7 @@ select {
   transition: border 0.2s ease, transform 0.2s ease;
   padding: 0;
   text-align: center;
+  transform: translate(-50%, -50%);
 }
 
 .tile::before {
@@ -542,8 +544,40 @@ select {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
+.tile.debug-ground::after {
+  content: "";
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  bottom: var(--ground-y, 0px);
+  height: 1px;
+  background: rgba(0, 255, 255, 0.35);
+  pointer-events: none;
+}
+
+.tile .building {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.tile .shadow {
+  position: absolute;
+  left: 50%;
+  bottom: 4px;
+  width: 70%;
+  height: 18px;
+  border-radius: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.55);
+  filter: blur(6px);
+  opacity: 0.35;
+  pointer-events: none;
+}
 .tile:hover {
-  transform: translateY(-1px);
+  transform: translate(-50%, calc(-50% - 1px));
 }
 
 .tile:hover::before {
@@ -620,7 +654,7 @@ select {
 }
 
 .tile.selected {
-  transform: translateY(-2px);
+  transform: translate(-50%, calc(-50% - 2px));
 }
 
 .tile.selected::before {

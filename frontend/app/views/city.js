@@ -6,6 +6,7 @@ import { cityApi, statsApi, authApi } from "../api.js";
 import { getToken } from "../auth.js";
 import { state } from "../state.js";
 import { showToast } from "../components/toast.js";
+import { SPRITE } from "../sprite_config.js";
 
 let selectedTile = null;
 let buildingMap = new Map();
@@ -14,8 +15,8 @@ let buildingCatalogByType = new Map();
 let selectedBuildType = "";
 let catalogLoaded = false;
 const BASE_GOLD_CAP = 200;
-const TILE_WIDTH = 80;
-const TILE_HEIGHT = 40;
+const TILE_WIDTH = 128;
+const TILE_HEIGHT = 64;
 let showDebugLabels = false;
 
 export async function cityView() {
@@ -157,10 +158,33 @@ function renderGrid(city) {
       const isoY = (x + y) * (TILE_HEIGHT / 2);
       tile.style.left = `${isoX}px`;
       tile.style.top = `${isoY}px`;
+      tile.style.zIndex = String(1000 + x + y);
+      tile.style.setProperty("--tile-w", `${TILE_WIDTH}px`);
+      tile.style.setProperty("--tile-h", `${TILE_HEIGHT}px`);
+      tile.classList.toggle("debug-ground", showDebugLabels);
 
       const building = buildingMap.get(`${x}:${y}`);
       if (building) {
         tile.classList.add("filled");
+        const sprite = getSpritePath(building.type, building.level);
+        if (sprite) {
+          const shadow = document.createElement("div");
+          shadow.className = "shadow";
+          tile.appendChild(shadow);
+
+          const img = document.createElement("img");
+          img.className = "building";
+          img.src = sprite;
+          img.alt = `${building.type} L${building.level}`;
+          const sprW = Math.round(SPRITE.size * SPRITE.scale);
+          const sprH = Math.round(SPRITE.size * SPRITE.scale);
+          const anchorYPx = Math.round(SPRITE.anchorY * SPRITE.scale);
+          img.width = sprW;
+          img.height = sprH;
+          img.style.bottom = `${-(sprH - anchorYPx)}px`;
+          tile.style.setProperty("--ground-y", `${anchorYPx}px`);
+          tile.appendChild(img);
+        }
         if (showDebugLabels) {
           const label = document.createElement("span");
           label.className = "tile-label";
@@ -278,6 +302,21 @@ function updateTopbarStats(city) {
   if (goldPill) {
     goldPill.dataset.value = city.gold;
   }
+}
+
+function getSpritePath(type, level) {
+  const map = {
+    town_hall: "Town_Hall",
+    gold_mine: "Gold_mine",
+    house: "House",
+    barracks: "Barracks",
+    wall: "Wall",
+    tower: "Tower",
+    storage: "Storage",
+  };
+  const name = map[type];
+  if (!name) return null;
+  return `assets/buildings/${name}_${level}.png`;
 }
 
 function getGoldCap(city) {

@@ -1,0 +1,5 @@
+export const SPRITE = {
+  size: 512,
+  scale: 0.5,
+  anchorY: 440,
+};
