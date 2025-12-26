@@ -309,6 +309,12 @@ select {
   box-shadow: none;
 }
 
+.btn.upgrade-btn:disabled {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
 .btn.ghost {
   background: transparent;
   color: var(--text);

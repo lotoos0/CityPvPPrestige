@@ -330,11 +330,19 @@ function renderUpgradePanel(container, building) {
     maxLabel.className = "status";
     maxLabel.textContent = "Max level.";
     container.appendChild(maxLabel);
+    const upgradeBtn = document.createElement("button");
+    upgradeBtn.className = "btn upgrade-btn";
+    upgradeBtn.textContent = "Upgrade";
+    upgradeBtn.disabled = true;
+    upgradeBtn.title = "Max level reached";
+    container.appendChild(upgradeBtn);
     return;
   }
 
   const nextLevel = building.level + 1;
   const cost = getBuildCost(building.type, nextLevel);
+  const gold = state.city?.gold ?? 0;
+  const canAfford = Number.isFinite(cost) && gold >= cost;
   const costRow = document.createElement("div");
   costRow.className = "row";
   const costText = document.createElement("span");
@@ -343,9 +351,17 @@ function renderUpgradePanel(container, building) {
   container.appendChild(costRow);
 
   const upgradeBtn = document.createElement("button");
-  upgradeBtn.className = "btn";
+  upgradeBtn.className = "btn upgrade-btn";
   upgradeBtn.textContent = `Upgrade to L${nextLevel}`;
-  upgradeBtn.disabled = !Number.isFinite(cost) || state.city.gold < cost;
+  upgradeBtn.disabled = !canAfford;
+  if (!upgradeBtn.disabled && Number.isFinite(cost)) {
+    upgradeBtn.title = "";
+  } else if (!Number.isFinite(cost)) {
+    upgradeBtn.title = "Upgrade cost unknown";
+  } else {
+    const missing = cost - gold;
+    upgradeBtn.title = `Need ${missing} gold`;
+  }
   upgradeBtn.addEventListener("click", () => handleUpgrade(building));
   container.appendChild(upgradeBtn);
 }
