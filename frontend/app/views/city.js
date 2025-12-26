@@ -136,9 +136,31 @@ function renderGrid(city) {
       const building = buildingMap.get(`${x}:${y}`);
       if (building) {
         tile.classList.add("filled");
-        tile.textContent = `${building.type.replace("_", " ").toUpperCase()} L${building.level}`;
+        const label = document.createElement("span");
+        label.className = "tile-label";
+        label.textContent = building.type.replace("_", " ").toUpperCase();
+
+        const levelBadge = document.createElement("span");
+        levelBadge.className = "tile-badge level";
+        levelBadge.textContent = `L${building.level}`;
+
+        tile.appendChild(label);
+        tile.appendChild(levelBadge);
+
+        if (building.level < 3 && state.city) {
+          const cost = getBuildCost(building.type, building.level + 1);
+          if (Number.isFinite(cost) && state.city.gold >= cost) {
+            const upgradeBadge = document.createElement("span");
+            upgradeBadge.className = "tile-badge upgrade";
+            upgradeBadge.textContent = "▲";
+            tile.appendChild(upgradeBadge);
+          }
+        }
       } else {
-        tile.textContent = `${x},${y}`;
+        const coords = document.createElement("span");
+        coords.className = "tile-coords";
+        coords.textContent = `${x},${y}`;
+        tile.appendChild(coords);
       }
 
       if (selectedTile && selectedTile.x === x && selectedTile.y === y) {
