@@ -73,9 +73,11 @@ async function refreshCity() {
     renderCombat(stats);
     renderGrid(city);
     renderTilePanel();
+    return city;
   } catch (error) {
     showToast(error.message || "Failed to load city", true);
   }
+  return null;
 }
 
 function renderStats(city) {
@@ -394,16 +396,20 @@ async function handleUpgrade(building) {
 async function handleCollect() {
   const buildStatus = document.getElementById("buildStatus");
   try {
-    const token = getToken();
-    const updated = await cityApi.collect(token);
-    const stats = await statsApi.fetch(token);
+    const beforeGold = state.city?.gold ?? 0;
+    const updated = await refreshCity();
+    const afterGold = updated?.gold ?? beforeGold;
+    const delta = afterGold - beforeGold;
 
-    state.setState({ city: updated });
-    renderStats(updated);
-    renderCombat(stats);
-
-    buildStatus.textContent = "Collected resources.";
-    buildStatus.style.color = "#9fb0c9";
+    if (delta > 0) {
+      showToast(`Collected +${delta} gold`);
+      buildStatus.textContent = `Collected +${delta} gold.`;
+      buildStatus.style.color = "#9fb0c9";
+    } else {
+      showToast("No resources ready.");
+      buildStatus.textContent = "No resources ready.";
+      buildStatus.style.color = "#9fb0c9";
+    }
   } catch (error) {
     buildStatus.textContent = error.message || "Collect failed";
     buildStatus.style.color = "#ff8c6a";

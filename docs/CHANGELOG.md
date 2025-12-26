@@ -10,6 +10,7 @@
 - Enforced **unique tile occupancy** - only one building per grid position
 - Added **lazy production tick** on city endpoint to update resources before display
 - Gold production now **clamped to city storage capacity**
+- Collect now **refreshes production state** and reports actual gains
 
 ### Army & Combat
 - Added **unit types and barracks ownership** with training queue system
