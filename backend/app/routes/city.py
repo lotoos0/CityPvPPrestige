@@ -11,6 +11,7 @@ from app.city_constants import (
     BASE_GOLD_CAP,
     BUILDING_DISPLAY_NAMES,
     BUILDING_EFFECTS,
+    BUILDING_FOOTPRINTS,
     MAX_BUILDING_LEVEL,
     get_build_cost,
     get_effect_value,
@@ -369,6 +370,7 @@ def get_buildings_catalog():
     items = []
     for building_type in sorted(ALLOWED_MVP_BUILDING_TYPES):
         display_name = BUILDING_DISPLAY_NAMES.get(building_type, building_type)
+        footprint = BUILDING_FOOTPRINTS.get(building_type, {"w": 1, "h": 1})
         levels = []
         for level in range(1, MAX_BUILDING_LEVEL + 1):
             effects = BUILDING_EFFECTS.get(building_type, {}).get(level, {})
@@ -386,6 +388,7 @@ def get_buildings_catalog():
             schemas.BuildingCatalogItem(
                 type=building_type,
                 display_name=display_name,
+                size=footprint,
                 levels=levels,
             )
         )

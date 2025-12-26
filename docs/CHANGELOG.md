@@ -14,6 +14,7 @@
 - Enabled **building placement and upgrades** in city view using catalog-based costs
 - Implemented **build and upgrade endpoints** with resource cost validation and production tick
 - Exposed **buildings catalog** for frontend build menu
+- Exposed **building footprint sizes** (w×h) via catalog for rendering
 - Enforced **unique tile occupancy** - only one building per grid position
 - Added **lazy production tick** on city endpoint to update resources before display
 - Gold production now **clamped to city storage capacity**
@@ -56,6 +57,7 @@
 - Switched **city grid to isometric layout** (placeholder tiles, no sprites)
 - Added **debug label toggle** to reduce visual noise in isometric grid
 - Added **sprite anchoring** with global anchorY and shadows for isometric tiles
+- Added **footprint clipping** for building sprites to avoid tile overlap
 
 ### Infrastructure & Quality
 - Pinned backend to **Python 3.12** for reproducible installs

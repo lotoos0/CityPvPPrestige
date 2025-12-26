@@ -20,7 +20,12 @@ def test_buildings_catalog_contract_shape() -> None:
     item = items[0]
     assert "type" in item
     assert "display_name" in item
+    assert "size" in item
     assert "levels" in item
+    assert "w" in item["size"]
+    assert "h" in item["size"]
+    assert item["size"]["w"] >= 1
+    assert item["size"]["h"] >= 1
 
     levels = item["levels"]
     assert isinstance(levels, list)

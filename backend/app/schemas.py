@@ -62,6 +62,7 @@ class BuildingLevelMeta(BaseModel):
 class BuildingCatalogItem(BaseModel):
     type: str
     display_name: str
+    size: dict[str, int]
     levels: list[BuildingLevelMeta]
 
 
