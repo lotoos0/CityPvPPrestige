@@ -111,6 +111,15 @@ export const cityApi = {
   async build(token, type, x, y) {
     return apiPost("/city/build", { type, x, y }, { Authorization: `Bearer ${token}` });
   },
+
+  async upgrade(token, x, y) {
+    return apiPost("/city/upgrade", { x, y }, { Authorization: `Bearer ${token}` });
+  },
+
+  async catalog(token) {
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    return apiGet("/city/buildings/catalog", headers);
+  },
 };
 
 /**
