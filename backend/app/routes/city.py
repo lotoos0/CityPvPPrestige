@@ -180,20 +180,28 @@ def build(
             },
         )
 
-    existing = next(
-        (b for b in buildings if b.x == payload.x and b.y == payload.y),
-        None,
-    )
-    if existing:
-        return JSONResponse(
-            status_code=409,
-            content={
-                "error": {
-                    "code": "TILE_OCCUPIED",
-                    "message": "Tile already occupied.",
-                }
-            },
-        )
+    footprint = BUILDING_FOOTPRINTS.get(normalized_type, {"w": 1, "h": 1})
+    occupied_tiles = []
+    for dx in range(footprint["w"]):
+        for dy in range(footprint["h"]):
+            tile_x = payload.x + dx
+            tile_y = payload.y + dy
+            if (
+                tile_x < 0
+                or tile_y < 0
+                or tile_x >= city.grid_size
+                or tile_y >= city.grid_size
+            ):
+                return JSONResponse(
+                    status_code=400,
+                    content={
+                        "error": {
+                            "code": "TILE_OUT_OF_BOUNDS",
+                            "message": "Footprint exceeds city bounds.",
+                        }
+                    },
+                )
+            occupied_tiles.append((tile_x, tile_y))
 
     build_cost = get_build_cost(normalized_type, 1)
     if build_cost is None:
@@ -230,6 +238,17 @@ def build(
     )
     db.add(building)
     try:
+        db.flush()
+        occupancy_rows = [
+            models.BuildingOccupancy(
+                city_id=city.id,
+                building_id=building.id,
+                x=tile_x,
+                y=tile_y,
+            )
+            for tile_x, tile_y in occupied_tiles
+        ]
+        db.add_all(occupancy_rows)
         db.commit()
     except IntegrityError:
         db.rollback()
