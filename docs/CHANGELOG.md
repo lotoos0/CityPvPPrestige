@@ -40,6 +40,7 @@
 - Refactored **SPA into router + views pattern** for better organization
 - Improved **view switching stability** - preserved state like cooldowns
 - Enhanced **PvP history UX** with loading states and pagination
+- Introduced **FOE-like layout** with resource topbar, sidebar navigation, and game-style toasts
 
 ### Infrastructure & Quality
 - Pinned backend to **Python 3.12** for reproducible installs

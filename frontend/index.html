@@ -16,19 +16,34 @@
     <div class="bg-glow"></div>
     <main class="shell">
       <header class="topbar">
-        <div>
+        <div class="brand">
           <p class="eyebrow">Prestige Wars</p>
-          <h1>City Control Console</h1>
+          <h1>City Command</h1>
         </div>
-        <nav class="nav-links" style="display: flex; gap: 1rem; align-items: center;">
-          <a href="#/city" style="color: #9fb0c9; text-decoration: none;">City</a>
-          <a href="#/pvp" style="color: #9fb0c9; text-decoration: none;">PvP</a>
-          <a href="#/army" style="color: #9fb0c9; text-decoration: none;">Army</a>
-          <a href="#/history" style="color: #9fb0c9; text-decoration: none;">History</a>
-          <button id="topbarLogoutBtn" class="btn ghost" style="display: none;">Logout</button>
-        </nav>
-        <div class="season-badge">Season 1 · Day 1/14</div>
+        <div class="resource-bar">
+          <div class="resource-pill">
+            <span>Gold</span>
+            <strong id="topbarGold">--</strong>
+          </div>
+          <div class="resource-pill">
+            <span>Cap</span>
+            <strong id="topbarGoldCap">--</strong>
+          </div>
+          <div class="resource-pill">
+            <span>Pop</span>
+            <strong id="topbarPop">--</strong>
+          </div>
+          <div class="resource-pill">
+            <span>Power</span>
+            <strong id="topbarPower">--</strong>
+          </div>
+          <div class="resource-pill">
+            <span>Prestige</span>
+            <strong id="topbarPrestige">--</strong>
+          </div>
+        </div>
         <div class="topbar-actions">
+          <div class="season-badge">Season 1 · Day 1/14</div>
           <input
             id="apiBase"
             class="input"
@@ -36,143 +51,170 @@
             aria-label="API base"
           />
           <button id="saveApi" class="btn ghost">Save</button>
+          <button id="topbarLogoutBtn" class="btn ghost" style="display: none;">Logout</button>
         </div>
       </header>
 
-      <section class="card auth" id="authSection">
-        <div class="auth-pane">
-          <h2>Create account</h2>
-          <form id="registerForm" class="form">
-            <input class="input" type="email" name="email" placeholder="email" required />
-            <input class="input" type="password" name="password" placeholder="password" required />
-            <button class="btn" type="submit">Register</button>
-          </form>
-        </div>
-        <div class="auth-pane">
-          <h2>Log in</h2>
-          <form id="loginForm" class="form">
-            <input class="input" type="email" name="email" placeholder="email" required />
-            <input class="input" type="password" name="password" placeholder="password" required />
-            <button class="btn" type="submit">Login</button>
-          </form>
-        </div>
-        <div class="auth-status">
-          <p id="authMessage">No active session.</p>
-          <button id="logoutBtn" class="btn ghost" disabled>Logout</button>
-        </div>
-      </section>
+      <div class="app-shell">
+        <aside class="sidebar">
+          <nav class="side-nav">
+            <a href="#/city" class="side-link">
+              <span class="side-icon">[C]</span>
+              City
+            </a>
+            <a href="#/pvp" class="side-link">
+              <span class="side-icon">[P]</span>
+              PvP
+            </a>
+            <a href="#/army" class="side-link">
+              <span class="side-icon">[A]</span>
+              Army
+            </a>
+            <a href="#/history" class="side-link">
+              <span class="side-icon">[H]</span>
+              History
+            </a>
+          </nav>
+        </aside>
 
-      <section class="hud">
-        <div class="card">
-          <h2>Resources</h2>
-          <div class="stats" id="resourceStats"></div>
-          <button id="collectBtn" class="btn" disabled>Collect</button>
-        </div>
-        <div class="card">
-          <h2>Combat Stats</h2>
-          <div class="stats" id="combatStats"></div>
-          <p class="hint">Attack from Barracks, defense adds Wall/Tower.</p>
-        </div>
-        <div class="card pvp-hud">
-          <div class="pvp-hud-header">
-            <div>
-              <h2>PvP Status</h2>
-              <p class="hint">Reset at <span id="pvpResetAt">--</span></p>
+        <section class="content">
+          <section class="card auth" id="authSection">
+            <div class="auth-pane">
+              <h2>Create account</h2>
+              <form id="registerForm" class="form">
+                <input class="input" type="email" name="email" placeholder="email" required />
+                <input class="input" type="password" name="password" placeholder="password" required />
+                <button class="btn" type="submit">Register</button>
+              </form>
             </div>
-            <button id="pvpRefreshBtn" class="btn ghost" disabled>Refresh</button>
-          </div>
-          <div id="pvpBanner" class="pvp-banner hidden"></div>
-          <div class="pvp-status">
-            <div class="pvp-row" id="pvpAttacksRow">Attacks: --</div>
-            <div class="pvp-row" id="pvpGainRow">Prestige gain: --</div>
-            <div class="pvp-row" id="pvpLossRow">Prestige loss: --</div>
-          </div>
-          <div class="pvp-cooldowns">
-            <div class="pvp-row" id="pvpGlobalCooldown">Global cooldown: --</div>
-            <div class="pvp-row" id="pvpTargetCooldown">Same target cooldown: --</div>
-          </div>
-          <div id="pvpStatus" class="status"></div>
-        </div>
-        <div class="card" id="army-card">
-          <h2>Army</h2>
-          <div class="row">
-            <button id="army-refresh" class="btn ghost" disabled>Refresh</button>
-            <span id="army-status" class="status"></span>
-          </div>
-          <div id="army-units" class="list"></div>
-        </div>
-        <div class="card" id="barracks-card">
-          <h2>Barracks</h2>
-          <div class="row">
-            <label>
-              Unit:
-              <select id="train-unit" class="input">
-                <option value="raider">Raider</option>
-                <option value="guardian">Guardian</option>
-              </select>
-            </label>
-            <label>
-              Qty:
-              <input id="train-qty" class="input" type="number" min="1" max="1000" value="10" />
-            </label>
-            <button id="train-submit" class="btn">Train</button>
-          </div>
-          <div class="row">
-            <button id="queue-refresh" class="btn ghost">Refresh Queue</button>
-            <button id="claim-submit" class="btn ghost">Claim</button>
-            <span id="barracks-status" class="status"></span>
-          </div>
-          <div id="barracks-queue" class="list"></div>
-        </div>
-        <div class="card">
-          <h2>Tile</h2>
-          <div id="tilePanel">
-            <p id="tilePanelTitle" class="hint">Select a tile.</p>
-            <div id="tilePanelBody" class="status"></div>
-          </div>
-          <div id="buildStatus" class="status"></div>
-        </div>
-      </section>
+            <div class="auth-pane">
+              <h2>Log in</h2>
+              <form id="loginForm" class="form">
+                <input class="input" type="email" name="email" placeholder="email" required />
+                <input class="input" type="password" name="password" placeholder="password" required />
+                <button class="btn" type="submit">Login</button>
+              </form>
+            </div>
+            <div class="auth-status">
+              <p id="authMessage">No active session.</p>
+              <button id="logoutBtn" class="btn ghost" disabled>Logout</button>
+            </div>
+          </section>
 
-      <section class="card city" aria-label="City grid">
-        <div class="city-header">
-          <h2>City Grid</h2>
-          <p class="hint">12x12. One building per tile.</p>
-        </div>
-        <div id="grid" class="grid"></div>
-      </section>
+          <section class="hud">
+            <div class="card">
+              <h2>Resources</h2>
+              <div class="stats" id="resourceStats"></div>
+              <button id="collectBtn" class="btn" disabled>Collect</button>
+            </div>
+            <div class="card">
+              <h2>Combat Stats</h2>
+              <div class="stats" id="combatStats"></div>
+              <p class="hint">Attack from Barracks, defense adds Wall/Tower.</p>
+            </div>
+            <div class="card pvp-hud">
+              <div class="pvp-hud-header">
+                <div>
+                  <h2>PvP Status</h2>
+                  <p class="hint">Reset at <span id="pvpResetAt">--</span></p>
+                </div>
+                <button id="pvpRefreshBtn" class="btn ghost" disabled>Refresh</button>
+              </div>
+              <div id="pvpBanner" class="pvp-banner hidden"></div>
+              <div class="pvp-status">
+                <div class="pvp-row" id="pvpAttacksRow">Attacks: --</div>
+                <div class="pvp-row" id="pvpGainRow">Prestige gain: --</div>
+                <div class="pvp-row" id="pvpLossRow">Prestige loss: --</div>
+              </div>
+              <div class="pvp-cooldowns">
+                <div class="pvp-row" id="pvpGlobalCooldown">Global cooldown: --</div>
+                <div class="pvp-row" id="pvpTargetCooldown">Same target cooldown: --</div>
+              </div>
+              <div id="pvpStatus" class="status"></div>
+            </div>
+            <div class="card" id="army-card">
+              <h2>Army</h2>
+              <div class="row">
+                <button id="army-refresh" class="btn ghost" disabled>Refresh</button>
+                <span id="army-status" class="status"></span>
+              </div>
+              <div id="army-units" class="list"></div>
+            </div>
+            <div class="card" id="barracks-card">
+              <h2>Barracks</h2>
+              <div class="row">
+                <label>
+                  Unit:
+                  <select id="train-unit" class="input">
+                    <option value="raider">Raider</option>
+                    <option value="guardian">Guardian</option>
+                  </select>
+                </label>
+                <label>
+                  Qty:
+                  <input id="train-qty" class="input" type="number" min="1" max="1000" value="10" />
+                </label>
+                <button id="train-submit" class="btn">Train</button>
+              </div>
+              <div class="row">
+                <button id="queue-refresh" class="btn ghost">Refresh Queue</button>
+                <button id="claim-submit" class="btn ghost">Claim</button>
+                <span id="barracks-status" class="status"></span>
+              </div>
+              <div id="barracks-queue" class="list"></div>
+            </div>
+            <div class="card tile-card">
+              <div class="tile-card-header">
+                <h2>Tile</h2>
+                <span class="hint" id="tilePanelTitle">Select a tile.</span>
+              </div>
+              <div id="tilePanelBody" class="panel-body"></div>
+              <div id="buildStatus" class="status"></div>
+            </div>
+          </section>
 
-      <section class="card ranking">
-        <div class="city-header">
-          <h2>Ranking</h2>
-          <p class="hint">Top 10 and your neighbors.</p>
-        </div>
-        <div class="ranking-grid">
-          <div>
-            <h3>Top 10</h3>
-            <div id="rankTop" class="ranking-list"></div>
-          </div>
-          <div>
-            <h3>Near You</h3>
-            <div id="rankNear" class="ranking-list"></div>
-          </div>
-        </div>
-        <div id="rankStatus" class="status"></div>
-      </section>
+          <section class="card city" aria-label="City grid">
+            <div class="city-header">
+              <h2>City Grid</h2>
+              <p class="hint">12x12. One building per tile.</p>
+            </div>
+            <div id="grid" class="grid"></div>
+          </section>
 
-      <section class="card history">
-        <div class="city-header">
-          <h2>Attack History</h2>
-          <p class="hint">Last 20 battles.</p>
-        </div>
-        <div id="attackLog" class="history-list"></div>
-        <div class="row">
-          <button id="historyLoadMore" class="btn ghost">Load more</button>
-          <span id="historyStatus" class="status"></span>
-        </div>
-      </section>
+          <section class="card ranking">
+            <div class="city-header">
+              <h2>Ranking</h2>
+              <p class="hint">Top 10 and your neighbors.</p>
+            </div>
+            <div class="ranking-grid">
+              <div>
+                <h3>Top 10</h3>
+                <div id="rankTop" class="ranking-list"></div>
+              </div>
+              <div>
+                <h3>Near You</h3>
+                <div id="rankNear" class="ranking-list"></div>
+              </div>
+            </div>
+            <div id="rankStatus" class="status"></div>
+          </section>
+
+          <section class="card history">
+            <div class="city-header">
+              <h2>Attack History</h2>
+              <p class="hint">Last 20 battles.</p>
+            </div>
+            <div id="attackLog" class="history-list"></div>
+            <div class="row">
+              <button id="historyLoadMore" class="btn ghost">Load more</button>
+              <span id="historyStatus" class="status"></span>
+            </div>
+          </section>
+        </section>
+      </div>
     </main>
 
+    <div id="toast" class="toast"></div>
     <script type="module" src="app/main.js"></script>
   </body>
 </html>

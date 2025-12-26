@@ -13,6 +13,7 @@ let buildingCatalog = [];
 let buildingCatalogByType = new Map();
 let selectedBuildType = "";
 let catalogLoaded = false;
+const BASE_GOLD_CAP = 200;
 
 export async function cityView() {
   const token = getToken();
@@ -94,6 +95,8 @@ function renderStats(city) {
     row.innerHTML = `<span>${label}</span><strong>${value}</strong>`;
     resourceStats.appendChild(row);
   });
+
+  updateTopbarStats(city);
 }
 
 function renderCombat(stats) {
@@ -207,6 +210,31 @@ function renderTilePanel() {
   renderBuildPanel(body);
 }
 
+function updateTopbarStats(city) {
+  const gold = document.getElementById("topbarGold");
+  const goldCap = document.getElementById("topbarGoldCap");
+  const pop = document.getElementById("topbarPop");
+  const power = document.getElementById("topbarPower");
+  const prestige = document.getElementById("topbarPrestige");
+
+  if (gold) gold.textContent = city.gold;
+  if (goldCap) goldCap.textContent = getGoldCap(city);
+  if (pop) pop.textContent = city.pop;
+  if (power) power.textContent = city.power;
+  if (prestige) prestige.textContent = city.prestige;
+}
+
+function getGoldCap(city) {
+  if (!catalogLoaded) return "--";
+  let bonus = 0;
+  city.buildings.forEach((building) => {
+    if (building.type !== "storage") return;
+    const item = buildingCatalogByType.get(building.type);
+    const levelMeta = item?.levels.find((entry) => entry.level === building.level);
+    bonus += levelMeta?.effects?.gold_cap || 0;
+  });
+  return BASE_GOLD_CAP + bonus;
+}
 function renderBuildPanel(container) {
   const info = document.createElement("div");
   info.textContent = "Empty tile.";
