@@ -10,6 +10,7 @@ import { SPRITE } from "../sprite_config.js";
 
 let selectedTile = null;
 let buildingMap = new Map();
+let occupancyMap = new Map();
 let buildingCatalog = [];
 let buildingCatalogByType = new Map();
 let selectedBuildType = "";
@@ -141,8 +142,27 @@ function renderGrid(city) {
   gridEl.classList.toggle("debug", showDebugLabels);
 
   buildingMap = new Map();
+  occupancyMap = new Map();
   city.buildings.forEach((b) => {
     buildingMap.set(`${b.x}:${b.y}`, b);
+  });
+  city.buildings.forEach((b) => {
+    const size = getFootprintSize(b.type);
+    for (let dx = 0; dx < size.w; dx += 1) {
+      for (let dy = 0; dy < size.h; dy += 1) {
+        const tileX = b.x + dx;
+        const tileY = b.y + dy;
+        const key = `${tileX}:${tileY}`;
+        occupancyMap.set(key, {
+          originX: b.x,
+          originY: b.y,
+          type: b.type,
+          level: b.level,
+          size,
+          isOrigin: dx === 0 && dy === 0,
+        });
+      }
+    }
   });
 
   const originX = (city.grid_size - 1) * (TILE_WIDTH / 2);
@@ -163,7 +183,22 @@ function renderGrid(city) {
       tile.style.setProperty("--tile-h", `${TILE_HEIGHT}px`);
       tile.classList.toggle("debug-ground", showDebugLabels);
 
-      const building = buildingMap.get(`${x}:${y}`);
+      const occupancy = occupancyMap.get(`${x}:${y}`);
+      if (occupancy) {
+        tile.classList.add("occupied");
+        tile.dataset.occupied = "1";
+        tile.dataset.originX = String(occupancy.originX);
+        tile.dataset.originY = String(occupancy.originY);
+        tile.dataset.btype = occupancy.type;
+        tile.dataset.blevel = String(occupancy.level);
+        if (!occupancy.isOrigin) {
+          tile.classList.add("blocked");
+        }
+      }
+
+      const building = occupancy?.isOrigin
+        ? buildingMap.get(`${occupancy.originX}:${occupancy.originY}`)
+        : null;
       if (building) {
         tile.classList.add("filled");
         const sprite = getSpritePath(building.type, building.level);
@@ -179,9 +214,12 @@ function renderGrid(city) {
           const sprW = Math.round(SPRITE.size * SPRITE.scale);
           const sprH = Math.round(SPRITE.size * SPRITE.scale);
           const anchorYPx = Math.round(SPRITE.anchorY * SPRITE.scale);
+          const footprintPx = Math.round(SPRITE.footprintHeight * SPRITE.scale);
+          const clipBottom = Math.max(0, sprH - footprintPx);
           img.width = sprW;
           img.height = sprH;
           img.style.bottom = `${-(sprH - anchorYPx)}px`;
+          img.style.clipPath = `inset(0px 0px ${clipBottom}px 0px)`;
           tile.style.setProperty("--ground-y", `${anchorYPx}px`);
           tile.appendChild(img);
         }
@@ -268,7 +306,7 @@ function renderTilePanel() {
   }
 
   const key = `${selectedTile.x}:${selectedTile.y}`;
-  const building = buildingMap.get(key);
+  const occupancy = occupancyMap.get(key);
   title.textContent = `Tile (${selectedTile.x}, ${selectedTile.y})`;
   body.innerHTML = "";
 
@@ -277,8 +315,15 @@ function renderTilePanel() {
     return;
   }
 
-  if (building) {
-    renderUpgradePanel(body, building);
+  if (occupancy) {
+    if (occupancy.isOrigin) {
+      const originBuilding = buildingMap.get(`${occupancy.originX}:${occupancy.originY}`);
+      if (originBuilding) {
+        renderUpgradePanel(body, originBuilding);
+        return;
+      }
+    }
+    renderOccupiedPanel(body, occupancy);
     return;
   }
 
@@ -329,6 +374,39 @@ function getGoldCap(city) {
     bonus += levelMeta?.effects?.gold_cap || 0;
   });
   return BASE_GOLD_CAP + bonus;
+}
+
+function getFootprintSize(type) {
+  const item = buildingCatalogByType.get(type);
+  if (!item || !item.size) {
+    return { w: 1, h: 1 };
+  }
+  return item.size;
+}
+
+function renderOccupiedPanel(container, occupancy) {
+  const catalogItem = buildingCatalogByType.get(occupancy.type);
+  const name = catalogItem?.display_name || occupancy.type.replace("_", " ").toUpperCase();
+  const info = document.createElement("div");
+  info.textContent = `Occupied by: ${name} L${occupancy.level}`;
+  container.appendChild(info);
+
+  const originInfo = document.createElement("div");
+  originInfo.className = "status";
+  originInfo.textContent = `Origin: (${occupancy.originX}, ${occupancy.originY})`;
+  container.appendChild(originInfo);
+
+  const detail = document.createElement("div");
+  detail.className = "status";
+  detail.textContent = `This tile is part of a ${occupancy.size.w}x${occupancy.size.h} footprint. Select the origin tile to upgrade.`;
+  container.appendChild(detail);
+
+  const buildBtn = document.createElement("button");
+  buildBtn.className = "btn";
+  buildBtn.textContent = "Build";
+  buildBtn.disabled = true;
+  buildBtn.title = "Tile occupied by another building";
+  container.appendChild(buildBtn);
 }
 function renderBuildPanel(container) {
   const info = document.createElement("div");

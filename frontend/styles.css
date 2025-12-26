@@ -589,6 +589,20 @@ select {
   font-weight: 600;
 }
 
+.tile.occupied::before {
+  background: rgba(86, 100, 128, 0.22);
+  border-color: rgba(140, 155, 180, 0.45);
+}
+
+.tile.blocked {
+  cursor: not-allowed;
+}
+
+.tile.blocked::before {
+  background: rgba(86, 100, 128, 0.3);
+  border-color: rgba(140, 155, 180, 0.6);
+}
+
 .tile.filled::before {
   background: rgba(245, 159, 0, 0.18);
   border-color: rgba(245, 159, 0, 0.45);
