@@ -490,17 +490,17 @@ select {
 }
 
 .grid {
-  display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: 6px;
+  position: relative;
   margin-top: 16px;
+  min-height: 320px;
 }
 
 .tile {
-  aspect-ratio: 1 / 1;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.04);
+  position: absolute;
+  width: 80px;
+  height: 40px;
+  border: none;
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -508,23 +508,41 @@ select {
   color: var(--muted);
   cursor: pointer;
   transition: border 0.2s ease, transform 0.2s ease;
-  position: relative;
-  padding: 6px;
+  padding: 0;
   text-align: center;
 }
 
+.tile::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
 .tile:hover {
-  border-color: rgba(245, 159, 0, 0.6);
   transform: translateY(-1px);
 }
 
+.tile:hover::before {
+  border-color: rgba(245, 159, 0, 0.6);
+}
+
 .tile.filled {
-  background: var(--accent-soft);
   color: var(--text);
   font-weight: 600;
 }
 
+.tile.filled::before {
+  background: rgba(245, 159, 0, 0.18);
+  border-color: rgba(245, 159, 0, 0.45);
+}
+
 .tile-label {
+  position: relative;
+  z-index: 1;
   font-size: 9px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -532,12 +550,15 @@ select {
 }
 
 .tile-coords {
+  position: relative;
+  z-index: 1;
   font-size: 9px;
   color: var(--muted);
 }
 
 .tile-badge {
   position: absolute;
+  z-index: 2;
   width: 24px;
   height: 24px;
   border-radius: 50%;
@@ -572,6 +593,10 @@ select {
 }
 
 .tile.selected {
+  transform: translateY(-2px);
+}
+
+.tile.selected::before {
   border-color: rgba(64, 176, 255, 0.9);
   box-shadow: 0 0 0 2px rgba(64, 176, 255, 0.25);
 }

@@ -14,6 +14,8 @@ let buildingCatalogByType = new Map();
 let selectedBuildType = "";
 let catalogLoaded = false;
 const BASE_GOLD_CAP = 200;
+const TILE_WIDTH = 80;
+const TILE_HEIGHT = 40;
 
 export async function cityView() {
   const token = getToken();
@@ -121,11 +123,15 @@ function renderCombat(stats) {
 function renderGrid(city) {
   const gridEl = document.getElementById("grid");
   gridEl.innerHTML = "";
+  gridEl.style.width = `${city.grid_size * TILE_WIDTH}px`;
+  gridEl.style.height = `${city.grid_size * TILE_HEIGHT}px`;
 
   buildingMap = new Map();
   city.buildings.forEach((b) => {
     buildingMap.set(`${b.x}:${b.y}`, b);
   });
+
+  const originX = (city.grid_size - 1) * (TILE_WIDTH / 2);
 
   for (let y = 0; y < city.grid_size; y += 1) {
     for (let x = 0; x < city.grid_size; x += 1) {
@@ -134,6 +140,10 @@ function renderGrid(city) {
       tile.className = "tile";
       tile.dataset.x = x;
       tile.dataset.y = y;
+      const isoX = (x - y) * (TILE_WIDTH / 2) + originX;
+      const isoY = (x + y) * (TILE_HEIGHT / 2);
+      tile.style.left = `${isoX}px`;
+      tile.style.top = `${isoY}px`;
 
       const building = buildingMap.get(`${x}:${y}`);
       if (building) {
