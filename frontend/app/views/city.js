@@ -276,7 +276,7 @@ function renderGrid(city) {
       if (building) {
         tile.classList.add("filled");
         if (occupancy.size.w > 1 || occupancy.size.h > 1) {
-          tile.appendChild(createPlate(occupancy.size, false));
+          tile.appendChild(createPlate(occupancy.size, false, "center"));
         }
         const sprite = getSpritePath(building.type, building.level);
         if (sprite) {
@@ -323,7 +323,7 @@ function renderGrid(city) {
           && selectedOriginKey === key
           && (lastSelectedFootprint.size.w > 1 || lastSelectedFootprint.size.h > 1)
         ) {
-          tile.appendChild(createPlate(lastSelectedFootprint.size, true));
+          tile.appendChild(createPlate(lastSelectedFootprint.size, true, "center"));
         }
         if (showDebugLabels) {
           const coords = document.createElement("span");
@@ -599,14 +599,53 @@ function getFootprintSize(type) {
   return item.size;
 }
 
-function createPlate(size, isPreview) {
+function createPlate(size, isPreview, anchor) {
   const plate = document.createElement("div");
   plate.className = `plate${isPreview ? " preview" : ""}`;
-  const plateWidth = (size.w + size.h) * (TILE_WIDTH / 2);
-  const plateHeight = (size.w + size.h) * (TILE_HEIGHT / 2);
-  plate.style.width = `${plateWidth}px`;
-  plate.style.height = `${plateHeight}px`;
+  applyPlateGeometry(plate, size, anchor);
   return plate;
+}
+
+function applyPlateGeometry(plate, size, anchor) {
+  const points = getFootprintPolygonPoints(size);
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  points.forEach((point) => {
+    minX = Math.min(minX, point.x);
+    minY = Math.min(minY, point.y);
+    maxX = Math.max(maxX, point.x);
+    maxY = Math.max(maxY, point.y);
+  });
+  const width = maxX - minX;
+  const height = maxY - minY;
+  plate.style.width = `${width}px`;
+  plate.style.height = `${height}px`;
+  if (anchor === "center") {
+    plate.style.left = `calc(50% + ${minX}px)`;
+    plate.style.top = `calc(50% + ${minY}px)`;
+  } else {
+    plate.style.left = `${minX}px`;
+    plate.style.top = `${minY}px`;
+  }
+  const clip = points
+    .map((point) => `${point.x - minX}px ${point.y - minY}px`)
+    .join(", ");
+  plate.style.clipPath = `polygon(${clip})`;
+}
+
+function getFootprintPolygonPoints(size) {
+  const halfW = TILE_WIDTH / 2;
+  const halfH = TILE_HEIGHT / 2;
+  const w = size.w;
+  const h = size.h;
+  return [
+    { x: 0, y: -halfH },
+    { x: w * halfW, y: (w - 1) * halfH },
+    { x: (w - h) * halfW, y: (w + h - 1) * halfH },
+    { x: -h * halfW, y: (h - 1) * halfH },
+  ];
 }
 
 function startPlacing(type) {
@@ -667,7 +706,7 @@ function renderGhost() {
   ghost.style.zIndex = String(2000 + x + y);
   ghost.innerHTML = "";
 
-  const plate = createPlate(size, false);
+  const plate = createPlate(size, false, "origin");
   plate.classList.add("ghost", valid ? "valid" : "invalid");
   ghost.appendChild(plate);
 
