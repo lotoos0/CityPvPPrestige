@@ -25,6 +25,7 @@ let dragStart = { x: 0, y: 0 };
 let dragOrigin = { x: 0, y: 0 };
 let dragMoved = false;
 let lastDragEndAt = 0;
+let lastSelectedFootprint = null;
 
 export async function cityView() {
   const token = getToken();
@@ -176,6 +177,29 @@ function renderGrid(city) {
     }
   });
 
+  lastSelectedFootprint = getSelectedFootprint();
+  const selectedKeys = new Set();
+  let selectedOriginKey = null;
+  if (lastSelectedFootprint) {
+    const { originX: selX, originY: selY, size } = lastSelectedFootprint;
+    for (let dx = 0; dx < size.w; dx += 1) {
+      for (let dy = 0; dy < size.h; dy += 1) {
+        const tileX = selX + dx;
+        const tileY = selY + dy;
+        if (
+          tileX < 0
+          || tileY < 0
+          || tileX >= city.grid_size
+          || tileY >= city.grid_size
+        ) {
+          continue;
+        }
+        selectedKeys.add(`${tileX}:${tileY}`);
+      }
+    }
+    selectedOriginKey = `${selX}:${selY}`;
+  }
+
   const originX = (city.grid_size - 1) * (TILE_WIDTH / 2);
 
   for (let y = 0; y < city.grid_size; y += 1) {
@@ -209,6 +233,17 @@ function renderGrid(city) {
         if (!occupancy.isOrigin) {
           tile.classList.add("blocked");
         }
+      }
+
+      const key = `${x}:${y}`;
+      if (selectedKeys.has(key)) {
+        tile.classList.add("footprint");
+        if (lastSelectedFootprint?.isPreview) {
+          tile.classList.add("footprint-preview");
+        }
+      }
+      if (selectedOriginKey && key === selectedOriginKey) {
+        tile.classList.add("footprint-origin");
       }
 
       const building = occupancy?.isOrigin
@@ -343,6 +378,26 @@ function selectTile(x, y) {
   renderTilePanel();
 }
 
+function focusTile(x, y) {
+  selectTile(x, y);
+  panToTile(x, y);
+}
+
+function panToTile(x, y) {
+  const city = state.city;
+  const gridEl = document.getElementById("grid");
+  const viewportEl = document.getElementById("gridViewport");
+  if (!city || !gridEl || !viewportEl) return;
+
+  const originX = (city.grid_size - 1) * (TILE_WIDTH / 2);
+  const isoX = (x - y) * (TILE_WIDTH / 2) + originX;
+  const isoY = (x + y) * (TILE_HEIGHT / 2);
+  const targetX = (viewportEl.clientWidth / 2) - isoX;
+  const targetY = (viewportEl.clientHeight / 2) - isoY;
+  gridOffset = { x: targetX, y: targetY };
+  gridEl.style.transform = `translate(${gridOffset.x}px, ${gridOffset.y}px)`;
+}
+
 function renderTilePanel() {
   const title = document.getElementById("tilePanelTitle");
   const body = document.getElementById("tilePanelBody");
@@ -438,6 +493,29 @@ function getFootprintSize(type) {
   return item.size;
 }
 
+function getSelectedFootprint() {
+  if (!selectedTile || !state.city) return null;
+  const key = `${selectedTile.x}:${selectedTile.y}`;
+  const occupancy = occupancyMap.get(key);
+  if (occupancy) {
+    return {
+      originX: occupancy.originX,
+      originY: occupancy.originY,
+      size: occupancy.size,
+      isPreview: false,
+    };
+  }
+  if (selectedBuildType) {
+    return {
+      originX: selectedTile.x,
+      originY: selectedTile.y,
+      size: getFootprintSize(selectedBuildType),
+      isPreview: true,
+    };
+  }
+  return null;
+}
+
 function cityHasTownHall() {
   return Boolean(state.city?.buildings?.some((building) => building.type === "town_hall"));
 }
@@ -458,6 +536,16 @@ function renderOccupiedPanel(container, occupancy) {
   detail.className = "status";
   detail.textContent = `This tile is part of a ${occupancy.size.w}x${occupancy.size.h} footprint. Select the origin tile to upgrade.`;
   container.appendChild(detail);
+
+  if (!occupancy.isOrigin) {
+    const focusBtn = document.createElement("button");
+    focusBtn.className = "btn ghost";
+    focusBtn.textContent = "Go to origin";
+    focusBtn.addEventListener("click", () => {
+      focusTile(occupancy.originX, occupancy.originY);
+    });
+    container.appendChild(focusBtn);
+  }
 
   const buildBtn = document.createElement("button");
   buildBtn.className = "btn";
