@@ -679,7 +679,7 @@ body.map-first .grid-viewport {
   pointer-events: none;
 }
 
-.tile .plate {
+.plate {
   position: absolute;
   left: 50%;
   bottom: 0;
@@ -692,7 +692,7 @@ body.map-first .grid-viewport {
   pointer-events: none;
 }
 
-.tile .plate.preview {
+.plate.preview {
   background: rgba(90, 120, 150, 0.35);
   border-color: rgba(160, 200, 230, 0.5);
 }
