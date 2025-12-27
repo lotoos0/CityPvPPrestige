@@ -251,6 +251,9 @@ function renderGrid(city) {
         : null;
       if (building) {
         tile.classList.add("filled");
+        if (occupancy.size.w > 1 || occupancy.size.h > 1) {
+          tile.appendChild(createPlate(occupancy.size, false));
+        }
         const sprite = getSpritePath(building.type, building.level);
         if (sprite) {
           const shadow = document.createElement("div");
@@ -291,6 +294,13 @@ function renderGrid(city) {
           }
         }
       } else {
+        if (
+          lastSelectedFootprint?.isPreview
+          && selectedOriginKey === key
+          && (lastSelectedFootprint.size.w > 1 || lastSelectedFootprint.size.h > 1)
+        ) {
+          tile.appendChild(createPlate(lastSelectedFootprint.size, true));
+        }
         if (showDebugLabels) {
           const coords = document.createElement("span");
           coords.className = "tile-coords";
@@ -502,6 +512,16 @@ function getFootprintSize(type) {
     return { w: 1, h: 1 };
   }
   return item.size;
+}
+
+function createPlate(size, isPreview) {
+  const plate = document.createElement("div");
+  plate.className = `plate${isPreview ? " preview" : ""}`;
+  const plateWidth = (size.w + size.h) * (TILE_WIDTH / 2);
+  const plateHeight = (size.w + size.h) * (TILE_HEIGHT / 2);
+  plate.style.width = `${plateWidth}px`;
+  plate.style.height = `${plateHeight}px`;
+  return plate;
 }
 
 function getSelectedFootprint() {
