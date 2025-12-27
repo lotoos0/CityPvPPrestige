@@ -697,6 +697,10 @@ body.map-first .grid-viewport {
   border-color: rgba(160, 200, 230, 0.5);
 }
 
+.ghost {
+  pointer-events: none;
+}
+
 .ghost .plate.ghost.valid {
   background: rgba(90, 160, 110, 0.45);
   border-color: rgba(140, 220, 170, 0.8);

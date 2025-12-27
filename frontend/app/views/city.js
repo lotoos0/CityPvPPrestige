@@ -422,7 +422,10 @@ function onGridPointerMove(event) {
 }
 
 function getTileFromPoint(clientX, clientY) {
+  const ghost = ghostEl;
+  if (ghost) ghost.style.display = "none";
   const target = document.elementFromPoint(clientX, clientY);
+  if (ghost) ghost.style.display = "";
   const tile = target?.closest?.(".tile");
   if (!tile) return null;
   const x = Number(tile.dataset.x);
