@@ -26,6 +26,10 @@ let dragOrigin = { x: 0, y: 0 };
 let dragMoved = false;
 let lastDragEndAt = 0;
 let lastSelectedFootprint = null;
+let placing = null;
+let ghostTile = null;
+let placementListenersBound = false;
+let ghostEl = null;
 
 export async function cityView() {
   const token = getToken();
@@ -56,6 +60,19 @@ export async function cityView() {
   const viewportEl = document.getElementById("gridViewport");
   if (viewportEl) {
     viewportEl.onpointerdown = onGridPointerDown;
+    viewportEl.onpointermove = onGridPointerMove;
+    if (!placementListenersBound) {
+      placementListenersBound = true;
+      viewportEl.addEventListener("contextmenu", (event) => {
+        if (!placing) return;
+        event.preventDefault();
+        stopPlacing();
+      });
+      window.addEventListener("keydown", (event) => {
+        if (event.key !== "Escape" || !placing) return;
+        stopPlacing();
+      });
+    }
   }
 
   const debugToggle = document.getElementById("toggleDebugLabels");
@@ -329,6 +346,10 @@ function onGridClick(event) {
   const y = Number(tile.dataset.y);
   if (!Number.isFinite(x) || !Number.isFinite(y)) return;
 
+  if (placing) {
+    attemptPlaceAt(x, y);
+    return;
+  }
   selectTile(x, y);
 }
 
@@ -381,7 +402,33 @@ function selectTileFromPoint(clientX, clientY) {
   const x = Number(tile.dataset.x);
   const y = Number(tile.dataset.y);
   if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+  if (placing) {
+    attemptPlaceAt(x, y);
+    return;
+  }
   selectTile(x, y);
+}
+
+function onGridPointerMove(event) {
+  if (!placing || dragging) return;
+  const tile = getTileFromPoint(event.clientX, event.clientY);
+  if (!tile) {
+    hideGhost();
+    return;
+  }
+  const valid = canPlaceAt(tile.x, tile.y, placing.size);
+  ghostTile = { x: tile.x, y: tile.y, valid };
+  renderGhost();
+}
+
+function getTileFromPoint(clientX, clientY) {
+  const target = document.elementFromPoint(clientX, clientY);
+  const tile = target?.closest?.(".tile");
+  if (!tile) return null;
+  const x = Number(tile.dataset.x);
+  const y = Number(tile.dataset.y);
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+  return { x, y };
 }
 
 function selectTile(x, y) {
@@ -525,6 +572,130 @@ function createPlate(size, isPreview) {
   return plate;
 }
 
+function startPlacing(type) {
+  if (!type) return;
+  placing = { type, size: getFootprintSize(type) };
+  if (selectedTile) {
+    ghostTile = {
+      x: selectedTile.x,
+      y: selectedTile.y,
+      valid: canPlaceAt(selectedTile.x, selectedTile.y, placing.size),
+    };
+  } else {
+    ghostTile = null;
+  }
+  renderGhost();
+}
+
+function stopPlacing() {
+  placing = null;
+  ghostTile = null;
+  hideGhost();
+  renderGrid(state.city);
+  renderTilePanel();
+}
+
+function ensureGhostElement() {
+  const gridEl = document.getElementById("grid");
+  if (!gridEl) return null;
+  if (!ghostEl) {
+    ghostEl = document.createElement("div");
+    ghostEl.className = "ghost";
+    ghostEl.style.position = "absolute";
+    ghostEl.style.pointerEvents = "none";
+    ghostEl.style.transform = "translate(-50%, -50%)";
+    gridEl.appendChild(ghostEl);
+  }
+  return ghostEl;
+}
+
+function renderGhost() {
+  const ghost = ensureGhostElement();
+  const city = state.city;
+  if (!ghost || !placing || !ghostTile || !city) {
+    hideGhost();
+    return;
+  }
+
+  const { x, y, valid } = ghostTile;
+  const { type, size } = placing;
+  const originX = (city.grid_size - 1) * (TILE_WIDTH / 2);
+  const isoX = (x - y) * (TILE_WIDTH / 2) + originX;
+  const isoY = (x + y) * (TILE_HEIGHT / 2);
+
+  ghost.style.display = "block";
+  ghost.style.left = `${isoX}px`;
+  ghost.style.top = `${isoY}px`;
+  ghost.style.zIndex = String(2000 + x + y);
+  ghost.innerHTML = "";
+
+  const plate = createPlate(size, false);
+  plate.classList.add("ghost", valid ? "valid" : "invalid");
+  ghost.appendChild(plate);
+
+  const sprite = getSpritePath(type, 1);
+  if (sprite) {
+    const img = document.createElement("img");
+    img.className = "ghost-sprite";
+    img.src = sprite;
+    img.alt = `${type} preview`;
+    const sprW = Math.round(SPRITE.size * SPRITE.scale);
+    const sprH = Math.round(SPRITE.size * SPRITE.scale);
+    img.width = sprW;
+    img.height = sprH;
+    img.style.bottom = "0px";
+    ghost.appendChild(img);
+  }
+}
+
+function hideGhost() {
+  if (ghostEl) {
+    ghostEl.style.display = "none";
+  }
+}
+
+function canPlaceAt(originX, originY, size) {
+  const city = state.city;
+  if (!city) return false;
+  for (let dx = 0; dx < size.w; dx += 1) {
+    for (let dy = 0; dy < size.h; dy += 1) {
+      const x = originX + dx;
+      const y = originY + dy;
+      if (x < 0 || y < 0 || x >= city.grid_size || y >= city.grid_size) {
+        return false;
+      }
+      if (occupancyMap.has(`${x}:${y}`)) {
+        return false;
+      }
+    }
+  }
+  const cost = getBuildCost(placing?.type, 1);
+  if (Number.isFinite(cost) && state.city?.gold < cost) {
+    return false;
+  }
+  return true;
+}
+
+async function attemptPlaceAt(x, y) {
+  if (!placing) return;
+  const valid = canPlaceAt(x, y, placing.size);
+  if (!valid) {
+    showToast("Cannot place here.", true);
+    return;
+  }
+  try {
+    const token = getToken();
+    await cityApi.build(token, placing.type, x, y);
+    const catalogItem = buildingCatalogByType.get(placing.type);
+    const name = catalogItem?.display_name || placing.type;
+    showToast(`Built ${name}`);
+    stopPlacing();
+    await refreshCity();
+  } catch (error) {
+    showToast(getErrorMessage(error), true);
+  }
+}
+
 function getSelectedFootprint() {
   if (!selectedTile || !state.city) return null;
   const key = `${selectedTile.x}:${selectedTile.y}`;
@@ -537,7 +708,7 @@ function getSelectedFootprint() {
       isPreview: false,
     };
   }
-  if (selectedBuildType) {
+  if (selectedBuildType && !placing) {
     return {
       originX: selectedTile.x,
       originY: selectedTile.y,
@@ -616,6 +787,11 @@ function renderBuildPanel(container) {
   select.value = selectedBuildType;
   select.addEventListener("change", () => {
     selectedBuildType = select.value;
+    if (selectedBuildType) {
+      startPlacing(selectedBuildType);
+    } else {
+      stopPlacing();
+    }
     renderGrid(state.city);
     renderTilePanel();
   });
@@ -639,12 +815,17 @@ function renderBuildPanel(container) {
 
   const buildBtn = document.createElement("button");
   buildBtn.className = "btn";
-  buildBtn.textContent = "Build";
+  buildBtn.textContent = placing ? "Placing..." : "Build";
   buildBtn.disabled =
     !selectedBuildType ||
     !Number.isFinite(cost) ||
-    state.city.gold < cost;
-  buildBtn.addEventListener("click", () => handleBuild());
+    state.city.gold < cost ||
+    placing;
+  buildBtn.addEventListener("click", () => {
+    if (!selectedBuildType) return;
+    startPlacing(selectedBuildType);
+    renderGrid(state.city);
+  });
   container.appendChild(buildBtn);
 }
 
