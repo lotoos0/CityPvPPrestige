@@ -397,31 +397,20 @@ function onGridPointerDown(event) {
 }
 
 function selectTileFromPoint(clientX, clientY) {
-  const target = document.elementFromPoint(clientX, clientY);
-  const tile = target?.closest?.(".tile");
+  const domTile = getTileFromPoint(clientX, clientY);
+  const tile = domTile || getTileFromPointIso(clientX, clientY);
   if (!tile) return;
-  const x = Number(tile.dataset.x);
-  const y = Number(tile.dataset.y);
-  if (!Number.isFinite(x) || !Number.isFinite(y)) return;
   if (placing) {
-    attemptPlaceAt(x, y);
+    attemptPlaceAt(tile.x, tile.y);
     return;
   }
-  selectTile(x, y);
+  selectTile(tile.x, tile.y);
 }
 
 function onGridPointerMove(event) {
   if (!placing || dragging) return;
-  const tileEl = event.target.closest(".tile");
-  if (!tileEl) {
-    hideGhost();
-    return;
-  }
-  const tile = {
-    x: Number(tileEl.dataset.x),
-    y: Number(tileEl.dataset.y),
-  };
-  if (!Number.isFinite(tile.x) || !Number.isFinite(tile.y)) {
+  const tile = getTileFromPointIso(event.clientX, event.clientY);
+  if (!tile) {
     hideGhost();
     return;
   }
@@ -440,6 +429,29 @@ function getTileFromPoint(clientX, clientY) {
   const x = Number(tile.dataset.x);
   const y = Number(tile.dataset.y);
   if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+  return { x, y };
+}
+
+function getTileFromPointIso(clientX, clientY) {
+  const city = state.city;
+  const gridEl = document.getElementById("grid");
+  if (!city || !gridEl) return null;
+  const rect = gridEl.getBoundingClientRect();
+  const localX = clientX - rect.left;
+  const localY = clientY - rect.top;
+  if (localX < 0 || localY < 0 || localX > rect.width || localY > rect.height) {
+    return null;
+  }
+  const originX = (city.grid_size - 1) * (TILE_WIDTH / 2);
+  const halfW = TILE_WIDTH / 2;
+  const halfH = TILE_HEIGHT / 2;
+  const gx = (localY / halfH + (localX - originX) / halfW) / 2;
+  const gy = (localY / halfH - (localX - originX) / halfW) / 2;
+  const x = Math.round(gx);
+  const y = Math.round(gy);
+  if (x < 0 || y < 0 || x >= city.grid_size || y >= city.grid_size) {
+    return null;
+  }
   return { x, y };
 }
 
