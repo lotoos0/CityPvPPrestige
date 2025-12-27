@@ -615,6 +615,7 @@ function renderBuildPanel(container) {
   select.value = selectedBuildType;
   select.addEventListener("change", () => {
     selectedBuildType = select.value;
+    renderGrid(state.city);
     renderTilePanel();
   });
 
