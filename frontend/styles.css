@@ -48,7 +48,8 @@ body {
 .topbar {
   position: sticky;
   top: 16px;
-  z-index: 40;
+  z-index: 1000;
+  pointer-events: auto;
   display: grid;
   grid-template-columns: minmax(200px, 1fr) minmax(320px, 1.4fr) minmax(260px, 1fr);
   gap: 16px;
@@ -58,6 +59,15 @@ body {
   border: 1px solid rgba(245, 159, 0, 0.2);
   background: linear-gradient(180deg, #1d2430 0%, #141a24 100%);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 18px 40px rgba(6, 10, 16, 0.45);
+}
+
+body.map-first .app-shell {
+  position: relative;
+  z-index: 1;
+}
+
+body.map-first .grid-viewport {
+  z-index: 1;
 }
 
 .season-badge {
