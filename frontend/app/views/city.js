@@ -30,6 +30,7 @@ let placing = null;
 let ghostTile = null;
 let placementListenersBound = false;
 let ghostEl = null;
+let topbarHeightBound = false;
 
 export async function cityView() {
   const token = getToken();
@@ -42,6 +43,12 @@ export async function cityView() {
   document.querySelector(".ranking").style.display = "none";
   document.querySelector(".history").style.display = "none";
   document.body.classList.add("map-first");
+
+  syncTopbarHeight();
+  if (!topbarHeightBound) {
+    topbarHeightBound = true;
+    window.addEventListener("resize", syncTopbarHeight);
+  }
 
   // Refresh catalog to pick up footprint changes.
   catalogLoaded = false;
@@ -91,6 +98,13 @@ export async function cityView() {
   }
 
   renderTilePanel();
+}
+
+function syncTopbarHeight() {
+  const topbar = document.querySelector(".topbar");
+  if (!topbar) return;
+  const height = topbar.getBoundingClientRect().height;
+  document.documentElement.style.setProperty("--topbar-h", `${height}px`);
 }
 
 async function ensureCatalog(token) {

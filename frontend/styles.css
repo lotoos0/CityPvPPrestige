@@ -16,6 +16,7 @@
   --z-world-overlay: 50;
   --z-hud: 1000;
   --z-modal: 2000;
+  --topbar-h: 100px;
 }
 
 * {
@@ -49,6 +50,11 @@ body {
   gap: 20px;
 }
 
+body.map-first .shell {
+  max-width: none;
+  padding: 16px;
+}
+
 .topbar {
   position: sticky;
   top: 16px;
@@ -65,9 +71,17 @@ body {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 18px 40px rgba(6, 10, 16, 0.45);
 }
 
+body.map-first .topbar {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  right: 16px;
+}
+
 body.map-first .app-shell {
   position: relative;
   z-index: 1;
+  padding-top: calc(var(--topbar-h) + 16px);
 }
 
 body.map-first .grid-viewport {
@@ -204,7 +218,7 @@ body.map-first .sidebar {
   position: fixed;
   left: 24px;
   bottom: 24px;
-  top: auto;
+  top: calc(var(--topbar-h) + 24px);
   width: 180px;
   min-height: auto;
   padding: 12px;
@@ -265,7 +279,7 @@ body.map-first .sidebar {
 body.map-first .content {
   position: relative;
   display: block;
-  min-height: calc(100vh - 140px);
+  min-height: calc(100vh - var(--topbar-h) - 16px);
 }
 
 .card {
@@ -291,7 +305,7 @@ body.map-first .card.city {
   border: none;
   box-shadow: none;
   padding: 0;
-  min-height: calc(100vh - 140px);
+  min-height: calc(100vh - var(--topbar-h) - 16px);
 }
 
 body.map-first .card.city::before {
@@ -394,11 +408,11 @@ select {
 }
 
 body.map-first .hud {
-  position: absolute;
-  top: 16px;
+  position: fixed;
+  top: calc(var(--topbar-h) + 16px);
   right: 16px;
-  width: 320px;
-  max-height: calc(100vh - 200px);
+  width: 360px;
+  max-height: calc(100vh - var(--topbar-h) - 32px);
   overflow-y: auto;
   grid-template-columns: 1fr;
   z-index: var(--z-hud);
@@ -582,7 +596,7 @@ body.map-first .city {
 
 body.map-first .city-header {
   position: absolute;
-  top: 16px;
+  top: calc(var(--topbar-h) + 16px);
   left: 16px;
   z-index: 20;
   padding: 8px 12px;
@@ -624,10 +638,12 @@ body.map-first .city-header {
 }
 
 body.map-first .grid-viewport {
+  position: fixed;
+  inset: calc(var(--topbar-h) + 16px) 16px 16px 16px;
   margin-top: 0;
-  height: calc(100vh - 140px);
+  height: auto;
   min-height: 560px;
-  border-radius: 0;
+  border-radius: 16px;
 }
 
 .grid-viewport.dragging {
