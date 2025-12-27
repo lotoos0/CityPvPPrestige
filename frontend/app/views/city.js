@@ -57,7 +57,6 @@ export async function cityView() {
 
   const gridEl = document.getElementById("grid");
   gridEl.onclick = onGridClick;
-  gridEl.onpointermove = onGridPointerMove;
   const viewportEl = document.getElementById("gridViewport");
   if (viewportEl) {
     viewportEl.onpointerdown = onGridPointerDown;
@@ -340,6 +339,12 @@ function onGridClick(event) {
   if (Date.now() - lastDragEndAt < 120) {
     return;
   }
+  if (placing) {
+    const tile = getTileFromPointIso(event.clientX, event.clientY);
+    if (!tile) return;
+    attemptPlaceAt(tile.x, tile.y);
+    return;
+  }
   const tile = event.target.closest(".tile");
   if (!tile) return;
 
@@ -347,10 +352,6 @@ function onGridClick(event) {
   const y = Number(tile.dataset.y);
   if (!Number.isFinite(x) || !Number.isFinite(y)) return;
 
-  if (placing) {
-    attemptPlaceAt(x, y);
-    return;
-  }
   selectTile(x, y);
 }
 
@@ -397,14 +398,15 @@ function onGridPointerDown(event) {
 }
 
 function selectTileFromPoint(clientX, clientY) {
-  const domTile = getTileFromPoint(clientX, clientY);
-  const tile = domTile || getTileFromPointIso(clientX, clientY);
-  if (!tile) return;
   if (placing) {
+    const tile = getTileFromPointIso(clientX, clientY);
+    if (!tile) return;
     attemptPlaceAt(tile.x, tile.y);
     return;
   }
-  selectTile(tile.x, tile.y);
+  const domTile = getTileFromPoint(clientX, clientY);
+  if (!domTile) return;
+  selectTile(domTile.x, domTile.y);
 }
 
 function onGridPointerMove(event) {
@@ -435,11 +437,12 @@ function getTileFromPoint(clientX, clientY) {
 function getTileFromPointIso(clientX, clientY) {
   const city = state.city;
   const gridEl = document.getElementById("grid");
-  if (!city || !gridEl) return null;
-  const rect = gridEl.getBoundingClientRect();
-  const localX = clientX - rect.left;
-  const localY = clientY - rect.top;
-  if (localX < 0 || localY < 0 || localX > rect.width || localY > rect.height) {
+  const viewportEl = document.getElementById("gridViewport");
+  if (!city || !gridEl || !viewportEl) return null;
+  const rect = viewportEl.getBoundingClientRect();
+  const localX = clientX - rect.left - gridOffset.x;
+  const localY = clientY - rect.top - gridOffset.y;
+  if (localX < 0 || localY < 0 || localX > gridEl.clientWidth || localY > gridEl.clientHeight) {
     return null;
   }
   const originX = (city.grid_size - 1) * (TILE_WIDTH / 2);
