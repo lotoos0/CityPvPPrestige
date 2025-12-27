@@ -43,6 +43,11 @@ export async function cityView() {
   document.querySelector(".history").style.display = "none";
   document.body.classList.add("map-first");
 
+  // Refresh catalog to pick up footprint changes.
+  catalogLoaded = false;
+  buildingCatalog = [];
+  buildingCatalogByType = new Map();
+
   await ensureCatalog(token);
   await refreshCity();
 
