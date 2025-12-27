@@ -57,6 +57,7 @@ export async function cityView() {
 
   const gridEl = document.getElementById("grid");
   gridEl.onclick = onGridClick;
+  gridEl.onpointermove = onGridPointerMove;
   const viewportEl = document.getElementById("gridViewport");
   if (viewportEl) {
     viewportEl.onpointerdown = onGridPointerDown;
@@ -411,8 +412,16 @@ function selectTileFromPoint(clientX, clientY) {
 
 function onGridPointerMove(event) {
   if (!placing || dragging) return;
-  const tile = getTileFromPoint(event.clientX, event.clientY);
-  if (!tile) {
+  const tileEl = event.target.closest(".tile");
+  if (!tileEl) {
+    hideGhost();
+    return;
+  }
+  const tile = {
+    x: Number(tileEl.dataset.x),
+    y: Number(tileEl.dataset.y),
+  };
+  if (!Number.isFinite(tile.x) || !Number.isFinite(tile.y)) {
     hideGhost();
     return;
   }
