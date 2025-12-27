@@ -178,12 +178,16 @@ function renderGrid(city) {
       const isoY = (x + y) * (TILE_HEIGHT / 2);
       tile.style.left = `${isoX}px`;
       tile.style.top = `${isoY}px`;
-      tile.style.zIndex = String(1000 + x + y);
       tile.style.setProperty("--tile-w", `${TILE_WIDTH}px`);
       tile.style.setProperty("--tile-h", `${TILE_HEIGHT}px`);
       tile.classList.toggle("debug-ground", showDebugLabels);
 
       const occupancy = occupancyMap.get(`${x}:${y}`);
+      let tileZ = x + y;
+      if (occupancy?.isOrigin) {
+        tileZ += (occupancy.size.w - 1) + (occupancy.size.h - 1);
+      }
+      tile.style.zIndex = String(1000 + tileZ);
       if (occupancy) {
         tile.classList.add("occupied");
         tile.dataset.occupied = "1";
