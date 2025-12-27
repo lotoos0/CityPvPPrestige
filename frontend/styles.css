@@ -232,6 +232,10 @@ body {
   overflow: hidden;
 }
 
+.card.city {
+  overflow: visible;
+}
+
 .card::before {
   content: "";
   position: absolute;
@@ -532,6 +536,7 @@ select {
   padding: 0;
   text-align: center;
   transform: translate(-50%, -50%);
+  overflow: visible;
 }
 
 .tile::before {

@@ -217,14 +217,9 @@ function renderGrid(city) {
           img.alt = `${building.type} L${building.level}`;
           const sprW = Math.round(SPRITE.size * SPRITE.scale);
           const sprH = Math.round(SPRITE.size * SPRITE.scale);
-          const anchorYPx = Math.round(SPRITE.anchorY * SPRITE.scale);
-          const footprintPx = Math.round(SPRITE.footprintHeight * SPRITE.scale);
-          const clipBottom = Math.max(0, sprH - footprintPx);
           img.width = sprW;
           img.height = sprH;
-          img.style.bottom = `${-(sprH - anchorYPx)}px`;
-          img.style.clipPath = `inset(0px 0px ${clipBottom}px 0px)`;
-          tile.style.setProperty("--ground-y", `${anchorYPx}px`);
+          img.style.bottom = "0px";
           tile.appendChild(img);
         }
         if (showDebugLabels) {
