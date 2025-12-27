@@ -69,6 +69,16 @@ def get_city_state(user_id: str) -> models.City:
 def cleanup_test_data(user_id: str) -> None:
     db = SessionLocal()
     try:
+        building_ids = (
+            db.query(models.Building.id)
+            .join(models.City, models.Building.city_id == models.City.id)
+            .filter(models.City.user_id == user_id)
+            .all()
+        )
+        for (building_id,) in building_ids:
+            db.query(models.BuildingOccupancy).filter(
+                models.BuildingOccupancy.building_id == building_id
+            ).delete()
         db.query(models.Building).filter(
             models.Building.city_id.in_(
                 db.query(models.City.id).filter(models.City.user_id == user_id)

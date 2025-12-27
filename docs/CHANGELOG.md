@@ -58,6 +58,8 @@
 - Added **debug label toggle** to reduce visual noise in isometric grid
 - Added **sprite anchoring** with global anchorY and shadows for isometric tiles
 - Added **footprint clipping** for building sprites to avoid tile overlap
+- Enforced **single Town Hall per city** with seeding on city creation
+- Hid **Town Hall** from build menu once placed
 
 ### Infrastructure & Quality
 - Pinned backend to **Python 3.12** for reproducible installs

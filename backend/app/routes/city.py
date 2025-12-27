@@ -20,6 +20,7 @@ from app.city_constants import (
 from app.db import get_db
 from app.routes.auth import get_current_user
 from app.city_production import apply_city_production
+from app.city_seed import seed_town_hall
 
 router = APIRouter(prefix="/city", tags=["city"])
 
@@ -33,6 +34,7 @@ def get_or_create_city(db: Session, user: models.User) -> models.City:
     db.add(city)
     db.commit()
     db.refresh(city)
+    seed_town_hall(db, city)
     return city
 
 
@@ -163,6 +165,19 @@ def build(
     now = datetime.now(timezone.utc)
     apply_city_production(city, buildings, now)
     db.commit()
+
+    if normalized_type == "town_hall":
+        has_town_hall = any(b.type == "town_hall" for b in buildings)
+        if has_town_hall:
+            return JSONResponse(
+                status_code=409,
+                content={
+                    "error": {
+                        "code": "TOWN_HALL_ALREADY_EXISTS",
+                        "message": "Town Hall already placed.",
+                    }
+                },
+            )
 
     if (
         payload.x < 0

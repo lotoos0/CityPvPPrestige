@@ -87,6 +87,21 @@ def test_army_contracts_end_to_end() -> None:
 def cleanup_test_data(user_id):
     db = SessionLocal()
     try:
+        building_ids = (
+            db.query(models.Building.id)
+            .join(models.City, models.Building.city_id == models.City.id)
+            .filter(models.City.user_id == user_id)
+            .all()
+        )
+        for (building_id,) in building_ids:
+            db.query(models.BuildingOccupancy).filter(
+                models.BuildingOccupancy.building_id == building_id
+            ).delete()
+        db.query(models.Building).filter(
+            models.Building.city_id.in_(
+                db.query(models.City.id).filter(models.City.user_id == user_id)
+            )
+        ).delete(synchronize_session=False)
         db.query(models.TrainingJob).filter(models.TrainingJob.user_id == user_id).delete()
         db.query(models.UserUnit).filter(models.UserUnit.user_id == user_id).delete()
         db.query(models.UserBuilding).filter(models.UserBuilding.user_id == user_id).delete()

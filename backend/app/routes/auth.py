@@ -6,6 +6,7 @@ from jose import JWTError
 from sqlalchemy.orm import Session
 
 from app import models, schemas
+from app.city_seed import seed_town_hall
 from app.db import get_db
 from app.security import create_access_token, decode_token, hash_password, verify_password
 
@@ -33,6 +34,7 @@ def register(payload: schemas.UserCreate, db: Session = Depends(get_db)):
     db.add(barracks)
     db.commit()
     db.refresh(user)
+    seed_town_hall(db, city)
     return user
 
 

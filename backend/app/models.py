@@ -49,6 +49,12 @@ class Building(Base):
     __tablename__ = "buildings"
     __table_args__ = (
         UniqueConstraint("city_id", "x", "y", name="uq_buildings_city_tile"),
+        Index(
+            "uq_buildings_city_town_hall",
+            "city_id",
+            unique=True,
+            postgresql_where=text("type = 'town_hall'"),
+        ),
     )
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)

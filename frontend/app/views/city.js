@@ -383,6 +383,10 @@ function getFootprintSize(type) {
   return item.size;
 }
 
+function cityHasTownHall() {
+  return Boolean(state.city?.buildings?.some((building) => building.type === "town_hall"));
+}
+
 function renderOccupiedPanel(container, occupancy) {
   const catalogItem = buildingCatalogByType.get(occupancy.type);
   const name = catalogItem?.display_name || occupancy.type.replace("_", " ").toUpperCase();
@@ -408,6 +412,10 @@ function renderOccupiedPanel(container, occupancy) {
   container.appendChild(buildBtn);
 }
 function renderBuildPanel(container) {
+  const hasTownHall = cityHasTownHall();
+  if (hasTownHall && selectedBuildType === "town_hall") {
+    selectedBuildType = "";
+  }
   const info = document.createElement("div");
   info.textContent = "Empty tile.";
   container.appendChild(info);
@@ -421,6 +429,9 @@ function renderBuildPanel(container) {
   select.innerHTML = "<option value=\"\">Select building</option>";
 
   buildingCatalog.forEach((item) => {
+    if (item.type === "town_hall" && hasTownHall) {
+      return;
+    }
     const option = document.createElement("option");
     option.value = item.type;
     option.textContent = item.display_name;
@@ -525,6 +536,7 @@ function getErrorMessage(error) {
     TILE_OCCUPIED: "Tile already occupied.",
     MAX_LEVEL: "Already max level.",
     BUILDING_TYPE_NOT_ALLOWED: "Not allowed in MVP.",
+    TOWN_HALL_ALREADY_EXISTS: "Town Hall already placed.",
   };
   return map[code] || "Action failed.";
 }

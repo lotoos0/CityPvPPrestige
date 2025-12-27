@@ -102,7 +102,7 @@ def test_building_footprint_occupancy_blocks_overlap() -> None:
 
     response = client.post(
         "/city/build",
-        json={"type": "town_hall", "x": 0, "y": 0},
+        json={"type": "barracks", "x": 0, "y": 0},
         headers={"Authorization": f"Bearer {token}"},
     )
     assert response.status_code == 201, response.text
@@ -134,7 +134,7 @@ def test_building_footprint_out_of_bounds() -> None:
 
     response = client.post(
         "/city/build",
-        json={"type": "town_hall", "x": 11, "y": 11},
+        json={"type": "barracks", "x": 11, "y": 11},
         headers={"Authorization": f"Bearer {token}"},
     )
     assert response.status_code == 400, response.text

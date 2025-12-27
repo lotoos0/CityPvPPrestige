@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app import models, schemas
+from app.city_seed import seed_town_hall
 from app.db import get_db
 from app.routes.auth import get_current_user
 
@@ -21,6 +22,7 @@ def get_or_create_city(db: Session, user: models.User) -> models.City:
     db.add(city)
     db.commit()
     db.refresh(city)
+    seed_town_hall(db, city)
     return city
 
 

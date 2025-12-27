@@ -224,14 +224,36 @@ def test_city_build_accepts_tower_alias() -> None:
 
     response = client.post(
         "/city/build",
-        json={"type": "scout_tower", "x": 6, "y": 6},
+        json={"type": "scout_tower", "x": 8, "y": 8},
         headers={"Authorization": f"Bearer {token}"},
     )
     assert response.status_code == 201, response.text
     body = response.json()
 
-    placed = [b for b in body["buildings"] if b["x"] == 6 and b["y"] == 6]
+    placed = [b for b in body["buildings"] if b["x"] == 8 and b["y"] == 8]
     assert placed
     assert placed[0]["type"] == "tower"
+
+    cleanup_test_data(user_id)
+
+
+def test_city_build_rejects_second_town_hall() -> None:
+    client = TestClient(app)
+    suffix = uuid.uuid4().hex[:8]
+    email = f"city_town_hall_{suffix}@example.com"
+    password = "TestPass123!"
+
+    user_id = register_user(client, email, password)
+    token = login_user(client, email, password)
+
+    seed_city_gold(user_id, 10000)
+
+    response = client.post(
+        "/city/build",
+        json={"type": "town_hall", "x": 0, "y": 0},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 409, response.text
+    assert response.json().get("error", {}).get("code") == "TOWN_HALL_ALREADY_EXISTS"
 
     cleanup_test_data(user_id)

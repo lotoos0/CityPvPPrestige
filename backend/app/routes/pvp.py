@@ -13,6 +13,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, aliased
 
 from app import models, schemas
+from app.city_seed import seed_town_hall
 from app.db import get_db
 from app.pvp_constants import (
     BASE_GAIN,
@@ -50,6 +51,7 @@ def get_or_create_city(db: Session, user: models.User) -> models.City:
     db.add(city)
     db.commit()
     db.refresh(city)
+    seed_town_hall(db, city)
     return city
 
 

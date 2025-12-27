@@ -100,6 +100,23 @@ def test_pvp_attack_allows_with_minimum_army() -> None:
 def cleanup_test_data(attacker_id, defender_id):
     db = SessionLocal()
     try:
+        building_ids = (
+            db.query(models.Building.id)
+            .join(models.City, models.Building.city_id == models.City.id)
+            .filter(models.City.user_id.in_([attacker_id, defender_id]))
+            .all()
+        )
+        for (building_id,) in building_ids:
+            db.query(models.BuildingOccupancy).filter(
+                models.BuildingOccupancy.building_id == building_id
+            ).delete()
+        db.query(models.Building).filter(
+            models.Building.city_id.in_(
+                db.query(models.City.id).filter(
+                    models.City.user_id.in_([attacker_id, defender_id])
+                )
+            )
+        ).delete(synchronize_session=False)
         db.query(models.PvpIdempotency).filter(
             models.PvpIdempotency.attacker_id == attacker_id
         ).delete()
