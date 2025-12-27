@@ -623,6 +623,7 @@ function stopPlacing() {
   placing = null;
   ghostTile = null;
   hideGhost();
+  selectedBuildType = "";
   renderGrid(state.city);
   renderTilePanel();
 }
@@ -683,6 +684,7 @@ function renderGhost() {
 function hideGhost() {
   if (ghostEl) {
     ghostEl.style.display = "none";
+    ghostEl.innerHTML = "";
   }
 }
 
