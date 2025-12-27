@@ -72,7 +72,7 @@ BUILDING_EFFECTS = {
 BUILDING_FOOTPRINTS = {
     "town_hall": {"w": 2, "h": 2},
     "barracks": {"w": 2, "h": 2},
-    "gold_mine": {"w": 1, "h": 1},
+    "gold_mine": {"w": 2, "h": 2},
     "house": {"w": 1, "h": 2},
     "wall": {"w": 1, "h": 3},
     "tower": {"w": 1, "h": 1},
