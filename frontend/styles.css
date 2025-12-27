@@ -12,6 +12,10 @@
   --metal-mid: #283246;
   --metal-light: #3c4b62;
   --gold-edge: rgba(245, 159, 0, 0.6);
+  --z-world: 0;
+  --z-world-overlay: 50;
+  --z-hud: 1000;
+  --z-modal: 2000;
 }
 
 * {
@@ -32,7 +36,7 @@ body {
   background: radial-gradient(circle at 20% 20%, rgba(245, 159, 0, 0.18), transparent 55%),
     radial-gradient(circle at 80% 10%, rgba(72, 190, 255, 0.15), transparent 50%);
   pointer-events: none;
-  z-index: 0;
+  z-index: var(--z-world);
 }
 
 .shell {
@@ -48,7 +52,7 @@ body {
 .topbar {
   position: sticky;
   top: 16px;
-  z-index: 1000;
+  z-index: var(--z-hud);
   pointer-events: auto;
   display: grid;
   grid-template-columns: minmax(200px, 1fr) minmax(320px, 1.4fr) minmax(260px, 1fr);
@@ -101,7 +105,7 @@ body.map-first .grid-viewport {
   justify-content: flex-end;
   align-items: center;
   position: relative;
-  z-index: 1001;
+  z-index: var(--z-hud);
   pointer-events: auto;
 }
 
@@ -204,7 +208,7 @@ body.map-first .sidebar {
   width: 180px;
   min-height: auto;
   padding: 12px;
-  z-index: 30;
+  z-index: var(--z-hud);
 }
 
 .side-nav {
@@ -397,7 +401,7 @@ body.map-first .hud {
   max-height: calc(100vh - 200px);
   overflow-y: auto;
   grid-template-columns: 1fr;
-  z-index: 25;
+  z-index: var(--z-hud);
   padding: 8px;
 }
 
@@ -616,6 +620,7 @@ body.map-first .city-header {
   border-radius: 12px;
   cursor: grab;
   touch-action: none;
+  z-index: var(--z-world);
 }
 
 body.map-first .grid-viewport {
