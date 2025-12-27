@@ -166,6 +166,7 @@ function renderGrid(city) {
   if (!city) return;
   const gridEl = document.getElementById("grid");
   gridEl.innerHTML = "";
+  ghostEl = null;
   gridEl.style.width = `${city.grid_size * TILE_WIDTH}px`;
   gridEl.style.height = `${city.grid_size * TILE_HEIGHT}px`;
   gridEl.classList.toggle("debug", showDebugLabels);
@@ -332,6 +333,10 @@ function renderGrid(city) {
       }
       gridEl.appendChild(tile);
     }
+  }
+
+  if (placing && ghostTile) {
+    renderGhost();
   }
 }
 
