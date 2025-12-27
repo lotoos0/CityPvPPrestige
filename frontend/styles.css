@@ -513,11 +513,27 @@ select {
   accent-color: var(--accent);
 }
 
-.grid {
+.grid-viewport {
   position: relative;
   margin-top: 16px;
-  min-height: 320px;
+  min-height: 520px;
+  height: 52vh;
+  overflow: hidden;
+  border-radius: 12px;
+  cursor: grab;
+  touch-action: none;
+}
+
+.grid-viewport.dragging {
+  cursor: grabbing;
+}
+
+.grid {
+  position: absolute;
+  inset: 0;
   overflow: visible;
+  transform: translate(0, 0);
+  transform-origin: 0 0;
 }
 
 .tile {

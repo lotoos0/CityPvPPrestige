@@ -19,6 +19,12 @@ const BASE_GOLD_CAP = 200;
 const TILE_WIDTH = 128;
 const TILE_HEIGHT = 64;
 let showDebugLabels = false;
+let gridOffset = { x: 0, y: 0 };
+let dragging = false;
+let dragStart = { x: 0, y: 0 };
+let dragOrigin = { x: 0, y: 0 };
+let dragMoved = false;
+let lastDragEndAt = 0;
 
 export async function cityView() {
   const token = getToken();
@@ -45,6 +51,10 @@ export async function cityView() {
 
   const gridEl = document.getElementById("grid");
   gridEl.onclick = onGridClick;
+  const viewportEl = document.getElementById("gridViewport");
+  if (viewportEl) {
+    viewportEl.onpointerdown = onGridPointerDown;
+  }
 
   const debugToggle = document.getElementById("toggleDebugLabels");
   if (debugToggle) {
@@ -140,6 +150,7 @@ function renderGrid(city) {
   gridEl.style.width = `${city.grid_size * TILE_WIDTH}px`;
   gridEl.style.height = `${city.grid_size * TILE_HEIGHT}px`;
   gridEl.classList.toggle("debug", showDebugLabels);
+  gridEl.style.transform = `translate(${gridOffset.x}px, ${gridOffset.y}px)`;
 
   buildingMap = new Map();
   occupancyMap = new Map();
@@ -262,6 +273,9 @@ function renderGrid(city) {
 }
 
 function onGridClick(event) {
+  if (Date.now() - lastDragEndAt < 120) {
+    return;
+  }
   const tile = event.target.closest(".tile");
   if (!tile) return;
 
@@ -270,6 +284,47 @@ function onGridClick(event) {
   if (!Number.isFinite(x) || !Number.isFinite(y)) return;
 
   selectTile(x, y);
+}
+
+function onGridPointerDown(event) {
+  if (event.button !== 0) return;
+  const viewport = event.currentTarget;
+  dragging = true;
+  dragMoved = false;
+  dragStart = { x: event.clientX, y: event.clientY };
+  dragOrigin = { x: gridOffset.x, y: gridOffset.y };
+  viewport.classList.add("dragging");
+  viewport.setPointerCapture(event.pointerId);
+
+  const onMove = (moveEvent) => {
+    if (!dragging) return;
+    const dx = moveEvent.clientX - dragStart.x;
+    const dy = moveEvent.clientY - dragStart.y;
+    if (!dragMoved && Math.hypot(dx, dy) > 4) {
+      dragMoved = true;
+    }
+    gridOffset = { x: dragOrigin.x + dx, y: dragOrigin.y + dy };
+    const gridEl = document.getElementById("grid");
+    if (gridEl) {
+      gridEl.style.transform = `translate(${gridOffset.x}px, ${gridOffset.y}px)`;
+    }
+  };
+
+  const onUp = (upEvent) => {
+    dragging = false;
+    viewport.classList.remove("dragging");
+    viewport.releasePointerCapture(upEvent.pointerId);
+    if (dragMoved) {
+      lastDragEndAt = Date.now();
+    }
+    viewport.removeEventListener("pointermove", onMove);
+    viewport.removeEventListener("pointerup", onUp);
+    viewport.removeEventListener("pointercancel", onUp);
+  };
+
+  viewport.addEventListener("pointermove", onMove);
+  viewport.addEventListener("pointerup", onUp);
+  viewport.addEventListener("pointercancel", onUp);
 }
 
 function selectTile(x, y) {
