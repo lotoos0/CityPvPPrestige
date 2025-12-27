@@ -4,8 +4,10 @@
  */
 
 import { router } from "./router.js";
-import { isAuthenticated, getToken, initTopbarLogout, updateTopbarLogout } from "./auth.js";
+import { getToken, initTopbarLogout, isAuthenticated, updateTopbarLogout } from "./auth.js";
+import { getApiBase, setApiBase } from "./api.js";
 import { authView } from "./views/auth.js";
+import { showToast } from "./components/toast.js";
 import { cityView } from "./views/city.js";
 import { pvpView, stopPvpView } from "./views/pvp.js";
 import { armyView, stopArmyView } from "./views/army.js";
@@ -19,6 +21,20 @@ initTopbarLogout(router);
 
 // Update topbar on route change
 router.onRouteChange = updateTopbarLogout;
+
+const apiBaseInput = document.getElementById("apiBase");
+const saveApiBtn = document.getElementById("saveApi");
+if (apiBaseInput) {
+  apiBaseInput.value = getApiBase();
+}
+if (saveApiBtn && apiBaseInput) {
+  saveApiBtn.addEventListener("click", () => {
+    const value = apiBaseInput.value.trim();
+    if (!value) return;
+    setApiBase(value);
+    showToast("API base saved");
+  });
+}
 
 // Register routes
 router.register("/", authView, false);

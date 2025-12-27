@@ -46,6 +46,9 @@ body {
 }
 
 .topbar {
+  position: sticky;
+  top: 16px;
+  z-index: 40;
   display: grid;
   grid-template-columns: minmax(200px, 1fr) minmax(320px, 1.4fr) minmax(260px, 1fr);
   gap: 16px;
