@@ -329,7 +329,6 @@ function onGridPointerDown(event) {
   dragStart = { x: event.clientX, y: event.clientY };
   dragOrigin = { x: gridOffset.x, y: gridOffset.y };
   viewport.classList.add("dragging");
-  viewport.setPointerCapture(event.pointerId);
 
   const onMove = (moveEvent) => {
     if (!dragging) return;
@@ -348,8 +347,10 @@ function onGridPointerDown(event) {
   const onUp = (upEvent) => {
     dragging = false;
     viewport.classList.remove("dragging");
-    viewport.releasePointerCapture(upEvent.pointerId);
     if (dragMoved) {
+      lastDragEndAt = Date.now();
+    } else {
+      selectTileFromPoint(upEvent.clientX, upEvent.clientY);
       lastDragEndAt = Date.now();
     }
     viewport.removeEventListener("pointermove", onMove);
@@ -360,6 +361,16 @@ function onGridPointerDown(event) {
   viewport.addEventListener("pointermove", onMove);
   viewport.addEventListener("pointerup", onUp);
   viewport.addEventListener("pointercancel", onUp);
+}
+
+function selectTileFromPoint(clientX, clientY) {
+  const target = document.elementFromPoint(clientX, clientY);
+  const tile = target?.closest?.(".tile");
+  if (!tile) return;
+  const x = Number(tile.dataset.x);
+  const y = Number(tile.dataset.y);
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+  selectTile(x, y);
 }
 
 function selectTile(x, y) {
