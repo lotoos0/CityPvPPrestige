@@ -19,6 +19,7 @@ export async function historyView() {
   document.querySelector(".city").style.display = "none";
   document.querySelector(".ranking").style.display = "none";
   document.querySelector(".history").style.display = "block";
+  document.body.classList.remove("map-first");
 
   // Initialize load more button (only once)
   if (!initialized) {

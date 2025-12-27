@@ -37,6 +37,7 @@ export async function cityView() {
   document.querySelector(".city").style.display = "block";
   document.querySelector(".ranking").style.display = "none";
   document.querySelector(".history").style.display = "none";
+  document.body.classList.add("map-first");
 
   await ensureCatalog(token);
   await refreshCity();

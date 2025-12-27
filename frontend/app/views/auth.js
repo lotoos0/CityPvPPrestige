@@ -21,6 +21,7 @@ export async function authView() {
   document.querySelector(".city").style.display = "none";
   document.querySelector(".ranking").style.display = "none";
   document.querySelector(".history").style.display = "none";
+  document.body.classList.remove("map-first");
 
   // Update logout button state
   logoutBtn.disabled = !getToken();

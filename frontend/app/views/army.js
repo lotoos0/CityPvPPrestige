@@ -20,6 +20,7 @@ export async function armyView() {
   document.querySelector(".city").style.display = "none";
   document.querySelector(".ranking").style.display = "none";
   document.querySelector(".history").style.display = "none";
+  document.body.classList.remove("map-first");
 
   // Start army HUD
   startArmyHud();

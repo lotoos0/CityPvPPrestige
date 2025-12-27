@@ -20,6 +20,7 @@ export async function pvpView() {
   document.querySelector(".city").style.display = "none";
   document.querySelector(".ranking").style.display = "block";
   document.querySelector(".history").style.display = "none";
+  document.body.classList.remove("map-first");
 
   // Start PvP HUD
   startPvpHud();

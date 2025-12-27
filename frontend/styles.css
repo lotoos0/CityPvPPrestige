@@ -159,6 +159,10 @@ body {
   align-items: start;
 }
 
+body.map-first .app-shell {
+  grid-template-columns: 1fr;
+}
+
 .sidebar {
   position: sticky;
   top: 16px;
@@ -169,6 +173,17 @@ body {
   border: 1px solid rgba(245, 159, 0, 0.2);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 14px 30px rgba(6, 10, 16, 0.45);
   min-height: 70vh;
+}
+
+body.map-first .sidebar {
+  position: fixed;
+  left: 24px;
+  bottom: 24px;
+  top: auto;
+  width: 180px;
+  min-height: auto;
+  padding: 12px;
+  z-index: 30;
 }
 
 .side-nav {
@@ -222,6 +237,12 @@ body {
   gap: 20px;
 }
 
+body.map-first .content {
+  position: relative;
+  display: block;
+  min-height: calc(100vh - 140px);
+}
+
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -232,8 +253,24 @@ body {
   overflow: hidden;
 }
 
+body.map-first .card {
+  box-shadow: 0 18px 40px var(--shadow);
+}
+
 .card.city {
   overflow: visible;
+}
+
+body.map-first .card.city {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  min-height: calc(100vh - 140px);
+}
+
+body.map-first .card.city::before {
+  display: none;
 }
 
 .card::before {
@@ -329,6 +366,27 @@ select {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 16px;
+}
+
+body.map-first .hud {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 320px;
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+  grid-template-columns: 1fr;
+  z-index: 25;
+  padding: 8px;
+}
+
+body.map-first .hud::-webkit-scrollbar {
+  width: 6px;
+}
+
+body.map-first .hud::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
 }
 
 .pvp-hud-header {
@@ -486,11 +544,26 @@ select {
   padding: 20px 20px 24px;
 }
 
+body.map-first .city {
+  padding: 0;
+}
+
 .city-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 12px;
+}
+
+body.map-first .city-header {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 20;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(20, 27, 38, 0.9), rgba(20, 27, 38, 0.6));
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .city-controls {
@@ -522,6 +595,13 @@ select {
   border-radius: 12px;
   cursor: grab;
   touch-action: none;
+}
+
+body.map-first .grid-viewport {
+  margin-top: 0;
+  height: calc(100vh - 140px);
+  min-height: 560px;
+  border-radius: 0;
 }
 
 .grid-viewport.dragging {
