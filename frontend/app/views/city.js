@@ -456,11 +456,14 @@ function onGridPointerMove(event) {
   const tile = getTileFromPointIso(event.clientX, event.clientY);
   if (!tile) {
     hideGhost();
+    updatePlacementCursor(null);
     return;
   }
-  const valid = canPlaceAt(tile.x, tile.y, placing.size);
-  ghostTile = { x: tile.x, y: tile.y, valid };
+  const status = getPlacementStatus(tile.x, tile.y, placing.size);
+  ghostTile = { x: tile.x, y: tile.y, valid: status.ok, reason: status.reason };
+  updatePlacementCursor(status.ok);
   renderGhost();
+  renderTilePanel();
 }
 
 function getTileFromPoint(clientX, clientY) {
@@ -539,6 +542,31 @@ function panToTile(x, y) {
 function renderTilePanel() {
   const title = document.getElementById("tilePanelTitle");
   const body = document.getElementById("tilePanelBody");
+
+  if (placing) {
+    const catalogItem = buildingCatalogByType.get(placing.type);
+    const name = catalogItem?.display_name || placing.type.replace("_", " ").toUpperCase();
+    title.textContent = "Placing";
+    body.innerHTML = "";
+
+    const mode = document.createElement("div");
+    mode.className = "status";
+    mode.textContent = `Placing: ${name} (${placing.size.w}x${placing.size.h})`;
+    body.appendChild(mode);
+
+    const hint = document.createElement("div");
+    hint.className = "status";
+    hint.textContent = "LMB place · RMB/ESC cancel";
+    body.appendChild(hint);
+
+    if (ghostTile && !ghostTile.valid) {
+      const reason = document.createElement("div");
+      reason.className = "status status-error";
+      reason.textContent = ghostTile.reason || "Cannot place here.";
+      body.appendChild(reason);
+    }
+    return;
+  }
 
   if (!selectedTile) {
     title.textContent = "Select a tile.";
@@ -691,13 +719,12 @@ function startPlacing(type) {
     seed = { x: selectedTile.x, y: selectedTile.y };
   }
   if (seed) {
-    ghostTile = {
-      x: seed.x,
-      y: seed.y,
-      valid: canPlaceAt(seed.x, seed.y, placing.size),
-    };
+    const status = getPlacementStatus(seed.x, seed.y, placing.size);
+    ghostTile = { x: seed.x, y: seed.y, valid: status.ok, reason: status.reason };
+    updatePlacementCursor(status.ok);
   } else {
     ghostTile = null;
+    updatePlacementCursor(null);
   }
   renderGhost();
 }
@@ -706,6 +733,7 @@ function stopPlacing() {
   placing = null;
   ghostTile = null;
   hideGhost();
+  updatePlacementCursor(null);
   selectedBuildType = "";
   renderGrid(state.city);
   renderTilePanel();
@@ -771,33 +799,48 @@ function hideGhost() {
   }
 }
 
+function updatePlacementCursor(valid) {
+  const viewport = document.getElementById("gridViewport");
+  if (!viewport) return;
+  viewport.classList.remove("placing-valid", "placing-invalid");
+  if (valid === true) {
+    viewport.classList.add("placing-valid");
+  } else if (valid === false) {
+    viewport.classList.add("placing-invalid");
+  }
+}
+
 function canPlaceAt(originX, originY, size) {
+  return getPlacementStatus(originX, originY, size).ok;
+}
+
+function getPlacementStatus(originX, originY, size) {
   const city = state.city;
-  if (!city) return false;
+  if (!city) return { ok: false, reason: "City not loaded." };
   for (let dx = 0; dx < size.w; dx += 1) {
     for (let dy = 0; dy < size.h; dy += 1) {
       const x = originX + dx;
       const y = originY + dy;
       if (x < 0 || y < 0 || x >= city.grid_size || y >= city.grid_size) {
-        return false;
+        return { ok: false, reason: "Out of bounds." };
       }
       if (occupancyMap.has(`${x}:${y}`)) {
-        return false;
+        return { ok: false, reason: "Tile occupied." };
       }
     }
   }
   const cost = getBuildCost(placing?.type, 1);
   if (Number.isFinite(cost) && state.city?.gold < cost) {
-    return false;
+    return { ok: false, reason: "Not enough gold." };
   }
-  return true;
+  return { ok: true, reason: "" };
 }
 
 async function attemptPlaceAt(x, y) {
   if (!placing) return;
-  const valid = canPlaceAt(x, y, placing.size);
-  if (!valid) {
-    showToast("Cannot place here.", true);
+  const status = getPlacementStatus(x, y, placing.size);
+  if (!status.ok) {
+    showToast(status.reason || "Cannot place here.", true);
     return;
   }
   try {

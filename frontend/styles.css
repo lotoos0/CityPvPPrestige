@@ -548,6 +548,10 @@ body.map-first .hud::-webkit-scrollbar-thumb {
   color: var(--muted);
 }
 
+.status-error {
+  color: #ff8c6a;
+}
+
 .row {
   display: flex;
   gap: 10px;
@@ -706,6 +710,14 @@ body.map-first .grid-viewport {
 
 .grid-viewport.dragging {
   cursor: grabbing;
+}
+
+body.map-first .grid-viewport.placing-valid {
+  cursor: pointer;
+}
+
+body.map-first .grid-viewport.placing-invalid {
+  cursor: not-allowed;
 }
 
 .grid {
