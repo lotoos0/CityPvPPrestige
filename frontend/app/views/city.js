@@ -782,6 +782,8 @@ function renderGhost() {
   ghost.style.left = `${isoX}px`;
   ghost.style.top = `${isoY}px`;
   ghost.style.zIndex = String(2000 + x + y);
+  ghost.classList.toggle("is-valid", valid);
+  ghost.classList.toggle("is-invalid", !valid);
   ghost.innerHTML = "";
 
   const plate = createPlate(size, false, "origin");
