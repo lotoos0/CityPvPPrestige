@@ -98,8 +98,15 @@ export async function cityView() {
         stopPlacing();
       });
       window.addEventListener("keydown", (event) => {
-        if (event.key !== "Escape" || !placing) return;
-        stopPlacing();
+        if (event.key === "Escape" && placing) {
+          stopPlacing();
+          return;
+        }
+        if (event.key !== "Enter" || !placing) return;
+        if (isTypingTarget(event.target)) return;
+        if (!ghostTile || !ghostTile.valid) return;
+        event.preventDefault();
+        attemptPlaceAt(ghostTile.x, ghostTile.y);
       });
     }
   }
@@ -821,6 +828,13 @@ function updatePlacementCursor(valid) {
   } else if (valid === false) {
     viewport.classList.add("placing-invalid");
   }
+}
+
+function isTypingTarget(target) {
+  if (!target) return false;
+  const tag = target.tagName;
+  if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return true;
+  return Boolean(target.isContentEditable);
 }
 
 function canPlaceAt(originX, originY, size) {
