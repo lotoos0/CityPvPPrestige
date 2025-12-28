@@ -29,6 +29,7 @@ class BuildingOut(BaseModel):
     x: int
     y: int
     rotation: int = 0
+    is_stored: bool = False
     model_config = ConfigDict(from_attributes=True)
 
 

@@ -61,7 +61,10 @@ def get_city(
     city = get_or_create_city(db, current_user)
     buildings = (
         db.query(models.Building)
-        .filter(models.Building.city_id == city.id)
+        .filter(
+            models.Building.city_id == city.id,
+            models.Building.is_stored.is_(False),
+        )
         .all()
     )
     now = datetime.now(timezone.utc)
@@ -87,7 +90,10 @@ def collect_resources(
     city = get_or_create_city(db, current_user)
     buildings = (
         db.query(models.Building)
-        .filter(models.Building.city_id == city.id)
+        .filter(
+            models.Building.city_id == city.id,
+            models.Building.is_stored.is_(False),
+        )
         .all()
     )
 
@@ -161,7 +167,10 @@ def build(
 
     buildings = (
         db.query(models.Building)
-        .filter(models.Building.city_id == city.id)
+        .filter(
+            models.Building.city_id == city.id,
+            models.Building.is_stored.is_(False),
+        )
         .all()
     )
     now = datetime.now(timezone.utc)
@@ -296,7 +305,10 @@ def build(
 
     buildings = (
         db.query(models.Building)
-        .filter(models.Building.city_id == city.id)
+        .filter(
+            models.Building.city_id == city.id,
+            models.Building.is_stored.is_(False),
+        )
         .all()
     )
 
@@ -326,6 +338,16 @@ def move_building(
         .first()
     )
     if not building:
+        return JSONResponse(
+            status_code=404,
+            content={
+                "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Building not found.",
+                }
+            },
+        )
+    if building.is_stored:
         return JSONResponse(
             status_code=404,
             content={
@@ -427,7 +449,70 @@ def move_building(
 
     buildings = (
         db.query(models.Building)
-        .filter(models.Building.city_id == city.id)
+        .filter(
+            models.Building.city_id == city.id,
+            models.Building.is_stored.is_(False),
+        )
+        .all()
+    )
+
+    return schemas.CityOut(
+        id=city.id,
+        grid_size=city.grid_size,
+        gold=city.gold,
+        pop=city.pop,
+        power=city.power,
+        prestige=current_user.prestige,
+        buildings=buildings,
+    )
+
+
+@router.post("/buildings/{building_id}/store", response_model=schemas.CityOut)
+def store_building(
+    building_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    city = get_or_create_city(db, current_user)
+
+    building = (
+        db.query(models.Building)
+        .filter(models.Building.id == building_id, models.Building.city_id == city.id)
+        .first()
+    )
+    if not building or building.is_stored:
+        return JSONResponse(
+            status_code=404,
+            content={
+                "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Building not found.",
+                }
+            },
+        )
+    if building.type == "town_hall":
+        return JSONResponse(
+            status_code=409,
+            content={
+                "error": {
+                    "code": "TOWN_HALL_LOCKED",
+                    "message": "Town Hall cannot be stored.",
+                }
+            },
+        )
+
+    db.query(models.BuildingOccupancy).filter(
+        models.BuildingOccupancy.building_id == building.id
+    ).delete()
+    building.is_stored = True
+    db.commit()
+
+    buildings = (
+        db.query(models.Building)
+        .filter(
+            models.Building.city_id == city.id,
+            models.Building.is_stored.is_(False),
+        )
         .all()
     )
 
@@ -452,7 +537,10 @@ def upgrade(
 
     buildings = (
         db.query(models.Building)
-        .filter(models.Building.city_id == city.id)
+        .filter(
+            models.Building.city_id == city.id,
+            models.Building.is_stored.is_(False),
+        )
         .all()
     )
     now = datetime.now(timezone.utc)

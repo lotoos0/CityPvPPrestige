@@ -64,6 +64,7 @@ class Building(Base):
     x = Column(Integer, nullable=False)
     y = Column(Integer, nullable=False)
     rotation = Column(Integer, server_default=text("0"), nullable=False)
+    is_stored = Column(Boolean, server_default=text("false"), nullable=False)
     placed_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 
