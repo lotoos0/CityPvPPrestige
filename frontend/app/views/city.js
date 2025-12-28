@@ -582,6 +582,11 @@ function renderTilePanel() {
     mode.textContent = `Placing: ${name} (${placementSize.w}x${placementSize.h})`;
     body.appendChild(mode);
 
+    const rotation = document.createElement("div");
+    rotation.className = "status";
+    rotation.textContent = `Rotation: ${placing.rotated ? "90°" : "0°"} (R)`;
+    body.appendChild(rotation);
+
     const hint = document.createElement("div");
     hint.className = "status";
     hint.textContent = "LMB place · RMB/ESC cancel";
@@ -838,6 +843,13 @@ function renderGhost() {
   const plate = createPlate(size, false, "origin");
   plate.classList.add("ghost", valid ? "valid" : "invalid");
   ghost.appendChild(plate);
+
+  if (placing.rotated && size.w !== size.h) {
+    const marker = document.createElement("div");
+    marker.className = "ghost-rotation";
+    marker.textContent = "↻";
+    ghost.appendChild(marker);
+  }
 
   const sprite = getSpritePath(type, 1);
   if (sprite) {
