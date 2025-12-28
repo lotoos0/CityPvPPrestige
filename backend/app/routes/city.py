@@ -1,8 +1,10 @@
 from datetime import datetime, timezone
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import tuple_
 from sqlalchemy.orm import Session
 
 from app import models, schemas
@@ -268,6 +270,137 @@ def build(
     )
     db.add(building)
     try:
+        db.flush()
+        occupancy_rows = [
+            models.BuildingOccupancy(
+                city_id=city.id,
+                building_id=building.id,
+                x=tile_x,
+                y=tile_y,
+            )
+            for tile_x, tile_y in occupied_tiles
+        ]
+        db.add_all(occupancy_rows)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        return JSONResponse(
+            status_code=409,
+            content={
+                "error": {
+                    "code": "TILE_OCCUPIED",
+                    "message": "Tile already occupied.",
+                }
+            },
+        )
+
+    buildings = (
+        db.query(models.Building)
+        .filter(models.Building.city_id == city.id)
+        .all()
+    )
+
+    return schemas.CityOut(
+        id=city.id,
+        grid_size=city.grid_size,
+        gold=city.gold,
+        pop=city.pop,
+        power=city.power,
+        prestige=current_user.prestige,
+        buildings=buildings,
+    )
+
+
+@router.post("/buildings/{building_id}/move", response_model=schemas.CityOut)
+def move_building(
+    building_id: UUID,
+    payload: schemas.MoveRequest,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    city = get_or_create_city(db, current_user)
+
+    building = (
+        db.query(models.Building)
+        .filter(models.Building.id == building_id, models.Building.city_id == city.id)
+        .first()
+    )
+    if not building:
+        return JSONResponse(
+            status_code=404,
+            content={
+                "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Building not found.",
+                }
+            },
+        )
+
+    rotation = payload.rotation or 0
+    if rotation not in (0, 90):
+        return JSONResponse(
+            status_code=400,
+            content={
+                "error": {
+                    "code": "ROTATION_NOT_ALLOWED",
+                    "message": "Rotation must be 0 or 90.",
+                }
+            },
+        )
+
+    footprint = BUILDING_FOOTPRINTS.get(building.type, {"w": 1, "h": 1})
+    if rotation == 90 and footprint["w"] != footprint["h"]:
+        footprint = {"w": footprint["h"], "h": footprint["w"]}
+
+    occupied_tiles = []
+    for dx in range(footprint["w"]):
+        for dy in range(footprint["h"]):
+            tile_x = payload.x + dx
+            tile_y = payload.y + dy
+            if (
+                tile_x < 0
+                or tile_y < 0
+                or tile_x >= city.grid_size
+                or tile_y >= city.grid_size
+            ):
+                return JSONResponse(
+                    status_code=400,
+                    content={
+                        "error": {
+                            "code": "TILE_OUT_OF_BOUNDS",
+                            "message": "Footprint exceeds city bounds.",
+                        }
+                    },
+                )
+            occupied_tiles.append((tile_x, tile_y))
+
+    conflict = (
+        db.query(models.BuildingOccupancy)
+        .filter(
+            models.BuildingOccupancy.city_id == city.id,
+            tuple_(models.BuildingOccupancy.x, models.BuildingOccupancy.y).in_(occupied_tiles),
+            models.BuildingOccupancy.building_id != building.id,
+        )
+        .first()
+    )
+    if conflict:
+        return JSONResponse(
+            status_code=409,
+            content={
+                "error": {
+                    "code": "TILE_OCCUPIED",
+                    "message": "Tile already occupied.",
+                }
+            },
+        )
+
+    try:
+        db.query(models.BuildingOccupancy).filter(
+            models.BuildingOccupancy.building_id == building.id
+        ).delete()
+        building.x = payload.x
+        building.y = payload.y
+        building.rotation = rotation
         db.flush()
         occupancy_rows = [
             models.BuildingOccupancy(

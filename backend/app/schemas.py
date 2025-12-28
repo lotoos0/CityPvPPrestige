@@ -50,6 +50,12 @@ class BuildRequest(BaseModel):
     rotation: int = 0
 
 
+class MoveRequest(BaseModel):
+    x: int
+    y: int
+    rotation: int = 0
+
+
 class UpgradeRequest(BaseModel):
     x: int
     y: int
