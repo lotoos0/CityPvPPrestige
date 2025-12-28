@@ -31,6 +31,7 @@ let ghostTile = null;
 let placementListenersBound = false;
 let ghostEl = null;
 let topbarHeightBound = false;
+let lastPointer = null;
 
 export async function cityView() {
   const token = getToken();
@@ -450,6 +451,7 @@ function selectTileFromPoint(clientX, clientY) {
 }
 
 function onGridPointerMove(event) {
+  lastPointer = { x: event.clientX, y: event.clientY };
   if (!placing || dragging) return;
   const tile = getTileFromPointIso(event.clientX, event.clientY);
   if (!tile) {
@@ -681,11 +683,18 @@ function getFootprintPolygonPoints(size) {
 function startPlacing(type) {
   if (!type) return;
   placing = { type, size: getFootprintSize(type) };
-  if (selectedTile) {
+  let seed = null;
+  if (lastPointer) {
+    seed = getTileFromPointIso(lastPointer.x, lastPointer.y);
+  }
+  if (!seed && selectedTile) {
+    seed = { x: selectedTile.x, y: selectedTile.y };
+  }
+  if (seed) {
     ghostTile = {
-      x: selectedTile.x,
-      y: selectedTile.y,
-      valid: canPlaceAt(selectedTile.x, selectedTile.y, placing.size),
+      x: seed.x,
+      y: seed.y,
+      valid: canPlaceAt(seed.x, seed.y, placing.size),
     };
   } else {
     ghostTile = null;
