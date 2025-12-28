@@ -48,7 +48,7 @@ jobs:
           curl -f http://localhost:8000/health
 
       - name: Run tests
-        run: docker compose exec -T api pytest -v
+        run: docker compose exec -T -e PYTHONPATH=/app api pytest -v
 
       - name: Dump logs on failure
         if: failure()
