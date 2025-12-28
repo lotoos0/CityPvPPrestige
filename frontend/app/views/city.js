@@ -44,6 +44,22 @@ export async function cityView() {
   document.querySelector(".history").style.display = "none";
   document.body.classList.add("map-first");
 
+  const hud = document.querySelector(".hud");
+  const hudToggle = document.getElementById("hudToggle");
+  if (hud && hudToggle && !hudToggle.dataset.bound) {
+    const collapsed = localStorage.getItem("hudCollapsed") === "1";
+    hud.classList.toggle("hud--collapsed", collapsed);
+    hudToggle.setAttribute("aria-expanded", String(!collapsed));
+    hudToggle.textContent = collapsed ? "»" : "«";
+    hudToggle.dataset.bound = "1";
+    hudToggle.onclick = () => {
+      const nowCollapsed = hud.classList.toggle("hud--collapsed");
+      hudToggle.setAttribute("aria-expanded", String(!nowCollapsed));
+      hudToggle.textContent = nowCollapsed ? "»" : "«";
+      localStorage.setItem("hudCollapsed", nowCollapsed ? "1" : "0");
+    };
+  }
+
   syncTopbarHeight();
   if (!topbarHeightBound) {
     topbarHeightBound = true;
