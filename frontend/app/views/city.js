@@ -564,6 +564,8 @@ function renderTilePanel() {
     const cancelBtn = document.createElement("button");
     cancelBtn.className = "btn ghost";
     cancelBtn.textContent = "Cancel placement";
+    cancelBtn.type = "button";
+    cancelBtn.disabled = false;
     cancelBtn.addEventListener("click", stopPlacing);
     actions.appendChild(cancelBtn);
     body.appendChild(actions);
