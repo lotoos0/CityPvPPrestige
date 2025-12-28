@@ -559,6 +559,15 @@ function renderTilePanel() {
     hint.textContent = "LMB place · RMB/ESC cancel";
     body.appendChild(hint);
 
+    const actions = document.createElement("div");
+    actions.className = "row";
+    const cancelBtn = document.createElement("button");
+    cancelBtn.className = "btn ghost";
+    cancelBtn.textContent = "Cancel placement";
+    cancelBtn.addEventListener("click", stopPlacing);
+    actions.appendChild(cancelBtn);
+    body.appendChild(actions);
+
     if (ghostTile && !ghostTile.valid) {
       const reason = document.createElement("div");
       reason.className = "status status-error";
