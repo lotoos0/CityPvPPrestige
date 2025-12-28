@@ -31,6 +31,7 @@ def seed_town_hall(db: Session, city: models.City) -> None:
         level=1,
         x=origin_x,
         y=origin_y,
+        rotation=0,
     )
     db.add(building)
     try:

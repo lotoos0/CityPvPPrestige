@@ -63,6 +63,7 @@ class Building(Base):
     level = Column(Integer, server_default=text("1"), nullable=False)
     x = Column(Integer, nullable=False)
     y = Column(Integer, nullable=False)
+    rotation = Column(Integer, server_default=text("0"), nullable=False)
     placed_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 

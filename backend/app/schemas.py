@@ -28,6 +28,7 @@ class BuildingOut(BaseModel):
     level: int
     x: int
     y: int
+    rotation: int = 0
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -46,6 +47,7 @@ class BuildRequest(BaseModel):
     type: str
     x: int
     y: int
+    rotation: int = 0
 
 
 class UpgradeRequest(BaseModel):

@@ -195,7 +195,21 @@ def build(
             },
         )
 
+    rotation = payload.rotation or 0
+    if rotation not in (0, 90):
+        return JSONResponse(
+            status_code=400,
+            content={
+                "error": {
+                    "code": "ROTATION_NOT_ALLOWED",
+                    "message": "Rotation must be 0 or 90.",
+                }
+            },
+        )
+
     footprint = BUILDING_FOOTPRINTS.get(normalized_type, {"w": 1, "h": 1})
+    if rotation == 90 and footprint["w"] != footprint["h"]:
+        footprint = {"w": footprint["h"], "h": footprint["w"]}
     occupied_tiles = []
     for dx in range(footprint["w"]):
         for dy in range(footprint["h"]):
@@ -250,6 +264,7 @@ def build(
         level=1,
         x=payload.x,
         y=payload.y,
+        rotation=rotation,
     )
     db.add(building)
     try:

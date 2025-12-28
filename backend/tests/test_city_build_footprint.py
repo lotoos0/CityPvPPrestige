@@ -141,3 +141,52 @@ def test_building_footprint_out_of_bounds() -> None:
     assert response.json().get("error", {}).get("code") == "TILE_OUT_OF_BOUNDS"
 
     cleanup_test_data(user_id)
+
+
+def test_building_footprint_rotation_blocks_overlap() -> None:
+    client = TestClient(app)
+    suffix = uuid.uuid4().hex[:8]
+    email = f"footprint_rotate_{suffix}@example.com"
+    password = "TestPass123!"
+
+    user_id = register_user(client, email, password)
+    token = login_user(client, email, password)
+    seed_city_gold(user_id, 10000)
+
+    response = client.post(
+        "/city/build",
+        json={"type": "wall", "x": 0, "y": 0, "rotation": 90},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 201, response.text
+
+    response = client.post(
+        "/city/build",
+        json={"type": "house", "x": 0, "y": 2},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 409, response.text
+    assert response.json().get("error", {}).get("code") == "TILE_OCCUPIED"
+
+    cleanup_test_data(user_id)
+
+
+def test_building_rotation_out_of_bounds() -> None:
+    client = TestClient(app)
+    suffix = uuid.uuid4().hex[:8]
+    email = f"footprint_rotate_bounds_{suffix}@example.com"
+    password = "TestPass123!"
+
+    user_id = register_user(client, email, password)
+    token = login_user(client, email, password)
+    seed_city_gold(user_id, 10000)
+
+    response = client.post(
+        "/city/build",
+        json={"type": "wall", "x": 11, "y": 11, "rotation": 90},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 400, response.text
+    assert response.json().get("error", {}).get("code") == "TILE_OUT_OF_BOUNDS"
+
+    cleanup_test_data(user_id)
