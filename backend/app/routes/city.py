@@ -177,6 +177,20 @@ def build(
     apply_city_production(city, buildings, now)
     db.commit()
 
+    # Safety cleanup: remove occupancy rows for stored buildings in this city.
+    stored_ids = (
+        db.query(models.Building.id)
+        .filter(
+            models.Building.city_id == city.id,
+            models.Building.is_stored.is_(True),
+        )
+        .subquery()
+    )
+    db.query(models.BuildingOccupancy).filter(
+        models.BuildingOccupancy.building_id.in_(stored_ids)
+    ).delete(synchronize_session=False)
+    db.commit()
+
     if normalized_type == "town_hall":
         has_town_hall = any(b.type == "town_hall" for b in buildings)
         if has_town_hall:

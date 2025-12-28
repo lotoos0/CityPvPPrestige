@@ -130,6 +130,45 @@ def test_store_building_removes_from_city() -> None:
     cleanup_test_data(user_id)
 
 
+def test_build_cleans_stale_occupancy() -> None:
+    client = TestClient(app)
+    suffix = uuid.uuid4().hex[:8]
+    email = f"store_stale_{suffix}@example.com"
+    password = "TestPass123!"
+
+    user_id = register_user(client, email, password)
+    token = login_user(client, email, password)
+    seed_city_gold(user_id, 10000)
+
+    response = client.post(
+        "/city/build",
+        json={"type": "tower", "x": 2, "y": 2},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 201, response.text
+
+    building = get_building_at(user_id, 2, 2)
+    assert building is not None
+
+    db = SessionLocal()
+    try:
+        stored = db.query(models.Building).filter(models.Building.id == building.id).first()
+        assert stored is not None
+        stored.is_stored = True
+        db.commit()
+    finally:
+        db.close()
+
+    response = client.post(
+        "/city/build",
+        json={"type": "house", "x": 2, "y": 2},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 201, response.text
+
+    cleanup_test_data(user_id)
+
+
 def test_store_rejects_town_hall() -> None:
     client = TestClient(app)
     suffix = uuid.uuid4().hex[:8]
