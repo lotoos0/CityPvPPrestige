@@ -108,8 +108,12 @@ export const cityApi = {
     return apiPost("/city/collect", {}, { Authorization: `Bearer ${token}` });
   },
 
-  async build(token, type, x, y) {
-    return apiPost("/city/build", { type, x, y }, { Authorization: `Bearer ${token}` });
+  async build(token, type, x, y, rotation = 0) {
+    return apiPost(
+      "/city/build",
+      { type, x, y, rotation },
+      { Authorization: `Bearer ${token}` }
+    );
   },
 
   async upgrade(token, x, y) {

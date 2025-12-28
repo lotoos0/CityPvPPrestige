@@ -102,6 +102,26 @@ export async function cityView() {
           stopPlacing();
           return;
         }
+        if ((event.key === "r" || event.key === "R") && placing) {
+          if (isTypingTarget(event.target)) return;
+          if (placing.size.w === placing.size.h) return;
+          placing.rotated = !placing.rotated;
+          let seed = ghostTile;
+          if (!seed && lastPointer) {
+            seed = getTileFromPointIso(lastPointer.x, lastPointer.y);
+          }
+          if (seed) {
+            const status = getPlacementStatus(seed.x, seed.y, getPlacementSize());
+            ghostTile = { x: seed.x, y: seed.y, valid: status.ok, reason: status.reason };
+            updatePlacementCursor(status.ok);
+          } else {
+            ghostTile = null;
+            updatePlacementCursor(null);
+          }
+          renderGhost();
+          renderTilePanel();
+          return;
+        }
         if (event.key !== "Enter" || !placing) return;
         if (isTypingTarget(event.target)) return;
         if (!ghostTile || !ghostTile.valid) return;
@@ -221,7 +241,7 @@ function renderGrid(city) {
     buildingMap.set(`${b.x}:${b.y}`, b);
   });
   city.buildings.forEach((b) => {
-    const size = getFootprintSize(b.type);
+    const size = getBuildingFootprint(b);
     for (let dx = 0; dx < size.w; dx += 1) {
       for (let dy = 0; dy < size.h; dy += 1) {
         const tileX = b.x + dx;
@@ -466,7 +486,7 @@ function onGridPointerMove(event) {
     updatePlacementCursor(null);
     return;
   }
-  const status = getPlacementStatus(tile.x, tile.y, placing.size);
+  const status = getPlacementStatus(tile.x, tile.y, getPlacementSize());
   ghostTile = { x: tile.x, y: tile.y, valid: status.ok, reason: status.reason };
   updatePlacementCursor(status.ok);
   renderGhost();
@@ -555,10 +575,11 @@ function renderTilePanel() {
     const name = catalogItem?.display_name || placing.type.replace("_", " ").toUpperCase();
     title.textContent = "Placing";
     body.innerHTML = "";
+    const placementSize = getPlacementSize();
 
     const mode = document.createElement("div");
     mode.className = "status";
-    mode.textContent = `Placing: ${name} (${placing.size.w}x${placing.size.h})`;
+    mode.textContent = `Placing: ${name} (${placementSize.w}x${placementSize.h})`;
     body.appendChild(mode);
 
     const hint = document.createElement("div");
@@ -677,6 +698,26 @@ function getFootprintSize(type) {
   return item.size;
 }
 
+function getBuildingFootprint(building) {
+  const base = getFootprintSize(building.type);
+  if (!building || base.w === base.h) {
+    return base;
+  }
+  const rotation = building.rotation || 0;
+  if (rotation === 90) {
+    return { w: base.h, h: base.w };
+  }
+  return base;
+}
+
+function getPlacementSize() {
+  if (!placing) return { w: 1, h: 1 };
+  if (!placing.rotated || placing.size.w === placing.size.h) {
+    return placing.size;
+  }
+  return { w: placing.size.h, h: placing.size.w };
+}
+
 function createPlate(size, isPreview, anchor) {
   const plate = document.createElement("div");
   plate.className = `plate${isPreview ? " preview" : ""}`;
@@ -728,7 +769,7 @@ function getFootprintPolygonPoints(size) {
 
 function startPlacing(type) {
   if (!type) return;
-  placing = { type, size: getFootprintSize(type) };
+  placing = { type, size: getFootprintSize(type), rotated: false };
   let seed = null;
   if (lastPointer) {
     seed = getTileFromPointIso(lastPointer.x, lastPointer.y);
@@ -737,7 +778,7 @@ function startPlacing(type) {
     seed = { x: selectedTile.x, y: selectedTile.y };
   }
   if (seed) {
-    const status = getPlacementStatus(seed.x, seed.y, placing.size);
+    const status = getPlacementStatus(seed.x, seed.y, getPlacementSize());
     ghostTile = { x: seed.x, y: seed.y, valid: status.ok, reason: status.reason };
     updatePlacementCursor(status.ok);
   } else {
@@ -780,7 +821,8 @@ function renderGhost() {
   }
 
   const { x, y, valid } = ghostTile;
-  const { type, size } = placing;
+  const { type } = placing;
+  const size = getPlacementSize();
   const originX = (city.grid_size - 1) * (TILE_WIDTH / 2);
   const isoX = (x - y) * (TILE_WIDTH / 2) + originX;
   const isoY = (x + y) * (TILE_HEIGHT / 2);
@@ -865,14 +907,15 @@ function getPlacementStatus(originX, originY, size) {
 
 async function attemptPlaceAt(x, y) {
   if (!placing) return;
-  const status = getPlacementStatus(x, y, placing.size);
+  const status = getPlacementStatus(x, y, getPlacementSize());
   if (!status.ok) {
     showToast(status.reason || "Cannot place here.", true);
     return;
   }
   try {
     const token = getToken();
-    await cityApi.build(token, placing.type, x, y);
+    const rotation = placing.rotated ? 90 : 0;
+    await cityApi.build(token, placing.type, x, y, rotation);
     const catalogItem = buildingCatalogByType.get(placing.type);
     const name = catalogItem?.display_name || placing.type;
     showToast(`Built ${name}`);
