@@ -1226,6 +1226,7 @@ function renderUpgradePanel(container, building) {
     upgradeBtn.title = "Max level reached";
     container.appendChild(upgradeBtn);
     addMoveButton(container, building);
+    addStoreButton(container, building);
     return;
   }
 
@@ -1255,6 +1256,7 @@ function renderUpgradePanel(container, building) {
   upgradeBtn.addEventListener("click", () => handleUpgrade(building));
   container.appendChild(upgradeBtn);
   addMoveButton(container, building);
+  addStoreButton(container, building);
 }
 
 function addMoveButton(container, building) {
@@ -1265,6 +1267,16 @@ function addMoveButton(container, building) {
   moveBtn.disabled = Boolean(getActivePlacement());
   moveBtn.addEventListener("click", () => startMoving(building));
   container.appendChild(moveBtn);
+}
+
+function addStoreButton(container, building) {
+  const storeBtn = document.createElement("button");
+  storeBtn.className = "btn ghost";
+  storeBtn.type = "button";
+  storeBtn.textContent = "Store";
+  storeBtn.disabled = Boolean(getActivePlacement()) || building.type === "town_hall";
+  storeBtn.addEventListener("click", () => handleStore(building));
+  container.appendChild(storeBtn);
 }
 
 function getBuildCost(type, level) {
@@ -1311,6 +1323,23 @@ async function handleUpgrade(building) {
     const name = catalogItem?.display_name || building.type;
     showToast(`Upgraded ${name} to L${building.level + 1}`);
     await refreshCity();
+  } catch (error) {
+    showToast(getErrorMessage(error), true);
+  }
+}
+
+async function handleStore(building) {
+  if (!building) return;
+  const catalogItem = buildingCatalogByType.get(building.type);
+  const name = catalogItem?.display_name || building.type;
+  const confirmed = window.confirm(`Store ${name} L${building.level}?`);
+  if (!confirmed) return;
+  try {
+    const token = getToken();
+    await cityApi.store(token, building.id);
+    showToast(`Stored ${name}`);
+    await refreshCity();
+    renderTilePanel();
   } catch (error) {
     showToast(getErrorMessage(error), true);
   }

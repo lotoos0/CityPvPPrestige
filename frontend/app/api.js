@@ -128,6 +128,10 @@ export const cityApi = {
     );
   },
 
+  async store(token, buildingId) {
+    return apiPost(`/city/buildings/${buildingId}/store`, {}, { Authorization: `Bearer ${token}` });
+  },
+
   async catalog(token) {
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
     return apiGet("/city/buildings/catalog", headers);
