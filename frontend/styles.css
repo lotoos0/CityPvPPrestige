@@ -428,12 +428,14 @@ body.map-first .hud {
   grid-template-columns: 1fr;
   z-index: var(--z-hud);
   padding: 8px;
+  pointer-events: auto;
 }
 
 body.map-first .hud .card {
   background: linear-gradient(180deg, rgba(20, 28, 40, 0.92), rgba(10, 14, 22, 0.92));
   border: 1px solid rgba(245, 159, 0, 0.25);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 14px 30px rgba(6, 10, 16, 0.55);
+  pointer-events: auto;
 }
 
 .hud-toggle {
@@ -694,6 +696,7 @@ body.map-first .grid-viewport {
   height: auto;
   min-height: 560px;
   border-radius: 16px;
+  z-index: var(--z-world);
 }
 
 .grid-viewport::before {
