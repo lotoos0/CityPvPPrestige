@@ -18,6 +18,9 @@ jobs:
       - name: Build and start services
         run: docker compose up -d --build
 
+      - name: Check running containers
+        run: docker compose ps
+
       - name: Wait for database
         run: |
           for i in {1..30}; do
@@ -28,10 +31,21 @@ jobs:
           docker compose exec -T db pg_isready -U citypvp
 
       - name: Install test dependencies
-        run: docker compose exec -T api pip install -r requirements-dev.txt
+        run: |
+          docker compose exec -T api test -f requirements-dev.txt || exit 1
+          docker compose exec -T api pip install -r requirements-dev.txt
 
       - name: Run migrations
         run: docker compose exec -T api alembic upgrade head
+
+      - name: Wait for API health
+        run: |
+          for i in {1..30}; do
+            curl -f http://localhost:8000/health && break
+            echo "Waiting for API... ($i/30)"
+            sleep 2
+          done
+          curl -f http://localhost:8000/health
 
       - name: Run tests
         run: docker compose exec -T api pytest -v
