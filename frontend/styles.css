@@ -782,8 +782,13 @@ body.map-first .grid-viewport.placing-invalid {
 }
 
 .tile .building.moving-source {
-  opacity: 0.55;
-  filter: grayscale(0.4);
+  opacity: 0.35;
+  filter: grayscale(0.6) brightness(0.8);
+}
+
+.plate.moving-source-plate {
+  opacity: 0.35;
+  filter: saturate(0.6);
 }
 
 .tile .shadow {

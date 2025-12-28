@@ -343,7 +343,11 @@ function renderGrid(city) {
       if (building) {
         tile.classList.add("filled");
         if (occupancy.size.w > 1 || occupancy.size.h > 1) {
-          tile.appendChild(createPlate(occupancy.size, false, "center"));
+          const plate = createPlate(occupancy.size, false, "center");
+          if (moving && building.id === moving.id) {
+            plate.classList.add("moving-source-plate");
+          }
+          tile.appendChild(plate);
         }
         const sprite = getSpritePath(building.type, building.level);
         if (sprite) {
@@ -598,7 +602,7 @@ function renderTilePanel() {
 
     const mode = document.createElement("div");
     mode.className = "status";
-    mode.textContent = `Moving: ${name} (${placementSize.w}x${placementSize.h})`;
+    mode.textContent = `Moving: ${name} L${moving.level} (${placementSize.w}x${placementSize.h})`;
     body.appendChild(mode);
 
     const rotation = document.createElement("div");
