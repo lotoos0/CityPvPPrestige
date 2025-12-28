@@ -27,6 +27,7 @@ let dragMoved = false;
 let lastDragEndAt = 0;
 let lastSelectedFootprint = null;
 let placing = null;
+let moving = null;
 let ghostTile = null;
 let placementListenersBound = false;
 let ghostEl = null;
@@ -93,25 +94,32 @@ export async function cityView() {
     if (!placementListenersBound) {
       placementListenersBound = true;
       viewportEl.addEventListener("contextmenu", (event) => {
-        if (!placing) return;
+        if (!getActivePlacement()) return;
         event.preventDefault();
-        stopPlacing();
+        stopPlacementMode();
       });
       window.addEventListener("keydown", (event) => {
-        if (event.key === "Escape" && placing) {
-          stopPlacing();
+        const active = getActivePlacement();
+        if (event.key === "Escape" && active) {
+          stopPlacementMode();
           return;
         }
-        if ((event.key === "r" || event.key === "R") && placing) {
+        if ((event.key === "r" || event.key === "R") && active) {
           if (isTypingTarget(event.target)) return;
-          if (placing.size.w === placing.size.h) return;
-          placing.rotated = !placing.rotated;
+          if (active.size.w === active.size.h) return;
+          active.rotated = !active.rotated;
           let seed = ghostTile;
           if (!seed && lastPointer) {
             seed = getTileFromPointIso(lastPointer.x, lastPointer.y);
           }
           if (seed) {
-            const status = getPlacementStatus(seed.x, seed.y, getPlacementSize());
+            const status = getPlacementStatus(
+              seed.x,
+              seed.y,
+              getPlacementSize(active),
+              active.mode === "move" ? active.id : null,
+              active.mode === "move",
+            );
             ghostTile = { x: seed.x, y: seed.y, valid: status.ok, reason: status.reason };
             updatePlacementCursor(status.ok);
           } else {
@@ -122,7 +130,7 @@ export async function cityView() {
           renderTilePanel();
           return;
         }
-        if (event.key !== "Enter" || !placing) return;
+        if (event.key !== "Enter" || !active) return;
         if (isTypingTarget(event.target)) return;
         if (!ghostTile || !ghostTile.valid) return;
         event.preventDefault();
@@ -248,6 +256,7 @@ function renderGrid(city) {
         const tileY = b.y + dy;
         const key = `${tileX}:${tileY}`;
         occupancyMap.set(key, {
+          buildingId: b.id,
           originX: b.x,
           originY: b.y,
           type: b.type,
@@ -344,6 +353,9 @@ function renderGrid(city) {
 
           const img = document.createElement("img");
           img.className = "building";
+          if (moving && building.id === moving.id) {
+            img.classList.add("moving-source");
+          }
           img.src = sprite;
           img.alt = `${building.type} L${building.level}`;
           const sprW = Math.round(SPRITE.size * SPRITE.scale);
@@ -407,7 +419,7 @@ function onGridClick(event) {
   if (Date.now() - lastDragEndAt < 120) {
     return;
   }
-  if (placing) {
+  if (getActivePlacement()) {
     const tile = getTileFromPointIso(event.clientX, event.clientY);
     if (!tile) return;
     attemptPlaceAt(tile.x, tile.y);
@@ -466,7 +478,7 @@ function onGridPointerDown(event) {
 }
 
 function selectTileFromPoint(clientX, clientY) {
-  if (placing) {
+  if (getActivePlacement()) {
     const tile = getTileFromPointIso(clientX, clientY);
     if (!tile) return;
     attemptPlaceAt(tile.x, tile.y);
@@ -479,14 +491,21 @@ function selectTileFromPoint(clientX, clientY) {
 
 function onGridPointerMove(event) {
   lastPointer = { x: event.clientX, y: event.clientY };
-  if (!placing || dragging) return;
+  const active = getActivePlacement();
+  if (!active || dragging) return;
   const tile = getTileFromPointIso(event.clientX, event.clientY);
   if (!tile) {
     hideGhost();
     updatePlacementCursor(null);
     return;
   }
-  const status = getPlacementStatus(tile.x, tile.y, getPlacementSize());
+  const status = getPlacementStatus(
+    tile.x,
+    tile.y,
+    getPlacementSize(active),
+    active.mode === "move" ? active.id : null,
+    active.mode === "move",
+  );
   ghostTile = { x: tile.x, y: tile.y, valid: status.ok, reason: status.reason };
   updatePlacementCursor(status.ok);
   renderGhost();
@@ -569,6 +588,47 @@ function panToTile(x, y) {
 function renderTilePanel() {
   const title = document.getElementById("tilePanelTitle");
   const body = document.getElementById("tilePanelBody");
+
+  if (moving) {
+    const catalogItem = buildingCatalogByType.get(moving.type);
+    const name = catalogItem?.display_name || moving.type.replace("_", " ").toUpperCase();
+    title.textContent = "Moving";
+    body.innerHTML = "";
+    const placementSize = getPlacementSize(moving);
+
+    const mode = document.createElement("div");
+    mode.className = "status";
+    mode.textContent = `Moving: ${name} (${placementSize.w}x${placementSize.h})`;
+    body.appendChild(mode);
+
+    const rotation = document.createElement("div");
+    rotation.className = "status";
+    rotation.textContent = `Rotation: ${moving.rotated ? "90°" : "0°"} (R)`;
+    body.appendChild(rotation);
+
+    const hint = document.createElement("div");
+    hint.className = "status";
+    hint.textContent = "LMB place · RMB/ESC cancel";
+    body.appendChild(hint);
+
+    const actions = document.createElement("div");
+    actions.className = "row";
+    const cancelBtn = document.createElement("button");
+    cancelBtn.className = "btn ghost";
+    cancelBtn.type = "button";
+    cancelBtn.textContent = "Cancel move";
+    cancelBtn.addEventListener("click", stopMoving);
+    actions.appendChild(cancelBtn);
+    body.appendChild(actions);
+
+    if (ghostTile && !ghostTile.valid) {
+      const reason = document.createElement("div");
+      reason.className = "status status-error";
+      reason.textContent = ghostTile.reason || "Cannot place here.";
+      body.appendChild(reason);
+    }
+    return;
+  }
 
   if (placing) {
     const catalogItem = buildingCatalogByType.get(placing.type);
@@ -715,12 +775,16 @@ function getBuildingFootprint(building) {
   return base;
 }
 
-function getPlacementSize() {
-  if (!placing) return { w: 1, h: 1 };
-  if (!placing.rotated || placing.size.w === placing.size.h) {
-    return placing.size;
+function getPlacementSize(active = placing) {
+  if (!active) return { w: 1, h: 1 };
+  if (!active.rotated || active.size.w === active.size.h) {
+    return active.size;
   }
-  return { w: placing.size.h, h: placing.size.w };
+  return { w: active.size.h, h: active.size.w };
+}
+
+function getActivePlacement() {
+  return moving || placing;
 }
 
 function createPlate(size, isPreview, anchor) {
@@ -774,7 +838,8 @@ function getFootprintPolygonPoints(size) {
 
 function startPlacing(type) {
   if (!type) return;
-  placing = { type, size: getFootprintSize(type), rotated: false };
+  if (moving) stopMoving();
+  placing = { mode: "place", type, size: getFootprintSize(type), rotated: false };
   let seed = null;
   if (lastPointer) {
     seed = getTileFromPointIso(lastPointer.x, lastPointer.y);
@@ -783,7 +848,7 @@ function startPlacing(type) {
     seed = { x: selectedTile.x, y: selectedTile.y };
   }
   if (seed) {
-    const status = getPlacementStatus(seed.x, seed.y, getPlacementSize());
+    const status = getPlacementStatus(seed.x, seed.y, getPlacementSize(placing), null, false);
     ghostTile = { x: seed.x, y: seed.y, valid: status.ok, reason: status.reason };
     updatePlacementCursor(status.ok);
   } else {
@@ -803,6 +868,53 @@ function stopPlacing() {
   renderTilePanel();
 }
 
+function startMoving(building) {
+  if (!building) return;
+  if (placing) stopPlacing();
+  moving = {
+    mode: "move",
+    id: building.id,
+    type: building.type,
+    level: building.level,
+    size: getFootprintSize(building.type),
+    rotated: (building.rotation || 0) === 90,
+  };
+  let seed = null;
+  if (lastPointer) {
+    seed = getTileFromPointIso(lastPointer.x, lastPointer.y);
+  }
+  if (!seed) {
+    seed = { x: building.x, y: building.y };
+  }
+  const status = getPlacementStatus(
+    seed.x,
+    seed.y,
+    getPlacementSize(moving),
+    moving.id,
+    true,
+  );
+  ghostTile = { x: seed.x, y: seed.y, valid: status.ok, reason: status.reason };
+  updatePlacementCursor(status.ok);
+  renderGhost();
+}
+
+function stopMoving() {
+  moving = null;
+  ghostTile = null;
+  hideGhost();
+  updatePlacementCursor(null);
+  renderGrid(state.city);
+  renderTilePanel();
+}
+
+function stopPlacementMode() {
+  if (moving) {
+    stopMoving();
+  } else if (placing) {
+    stopPlacing();
+  }
+}
+
 function ensureGhostElement() {
   const gridEl = document.getElementById("grid");
   if (!gridEl) return null;
@@ -820,14 +932,15 @@ function ensureGhostElement() {
 function renderGhost() {
   const ghost = ensureGhostElement();
   const city = state.city;
-  if (!ghost || !placing || !ghostTile || !city) {
+  const active = getActivePlacement();
+  if (!ghost || !active || !ghostTile || !city) {
     hideGhost();
     return;
   }
 
   const { x, y, valid } = ghostTile;
-  const { type } = placing;
-  const size = getPlacementSize();
+  const { type } = active;
+  const size = getPlacementSize(active);
   const originX = (city.grid_size - 1) * (TILE_WIDTH / 2);
   const isoX = (x - y) * (TILE_WIDTH / 2) + originX;
   const isoY = (x + y) * (TILE_HEIGHT / 2);
@@ -844,14 +957,15 @@ function renderGhost() {
   plate.classList.add("ghost", valid ? "valid" : "invalid");
   ghost.appendChild(plate);
 
-  if (placing.rotated && size.w !== size.h) {
+  if (active.rotated && size.w !== size.h) {
     const marker = document.createElement("div");
     marker.className = "ghost-rotation";
     marker.textContent = "↻";
     ghost.appendChild(marker);
   }
 
-  const sprite = getSpritePath(type, 1);
+  const spriteLevel = active.mode === "move" ? active.level : 1;
+  const sprite = getSpritePath(type, spriteLevel);
   if (sprite) {
     const img = document.createElement("img");
     img.className = "ghost-sprite";
@@ -892,10 +1006,10 @@ function isTypingTarget(target) {
 }
 
 function canPlaceAt(originX, originY, size) {
-  return getPlacementStatus(originX, originY, size).ok;
+  return getPlacementStatus(originX, originY, size, null, false).ok;
 }
 
-function getPlacementStatus(originX, originY, size) {
+function getPlacementStatus(originX, originY, size, ignoreBuildingId, skipCost) {
   const city = state.city;
   if (!city) return { ok: false, reason: "City not loaded." };
   for (let dx = 0; dx < size.w; dx += 1) {
@@ -905,33 +1019,51 @@ function getPlacementStatus(originX, originY, size) {
       if (x < 0 || y < 0 || x >= city.grid_size || y >= city.grid_size) {
         return { ok: false, reason: "Out of bounds." };
       }
-      if (occupancyMap.has(`${x}:${y}`)) {
+      const occupancy = occupancyMap.get(`${x}:${y}`);
+      if (occupancy && occupancy.buildingId !== ignoreBuildingId) {
         return { ok: false, reason: "Tile occupied." };
       }
     }
   }
-  const cost = getBuildCost(placing?.type, 1);
-  if (Number.isFinite(cost) && state.city?.gold < cost) {
-    return { ok: false, reason: "Not enough gold." };
+  if (!skipCost) {
+    const cost = getBuildCost(placing?.type, 1);
+    if (Number.isFinite(cost) && state.city?.gold < cost) {
+      return { ok: false, reason: "Not enough gold." };
+    }
   }
   return { ok: true, reason: "" };
 }
 
 async function attemptPlaceAt(x, y) {
-  if (!placing) return;
-  const status = getPlacementStatus(x, y, getPlacementSize());
+  const active = getActivePlacement();
+  if (!active) return;
+  const status = getPlacementStatus(
+    x,
+    y,
+    getPlacementSize(active),
+    active.mode === "move" ? active.id : null,
+    active.mode === "move",
+  );
   if (!status.ok) {
     showToast(status.reason || "Cannot place here.", true);
     return;
   }
   try {
     const token = getToken();
-    const rotation = placing.rotated ? 90 : 0;
-    await cityApi.build(token, placing.type, x, y, rotation);
-    const catalogItem = buildingCatalogByType.get(placing.type);
-    const name = catalogItem?.display_name || placing.type;
-    showToast(`Built ${name}`);
-    stopPlacing();
+    const rotation = active.rotated ? 90 : 0;
+    if (active.mode === "move") {
+      await cityApi.move(token, active.id, x, y, rotation);
+      const catalogItem = buildingCatalogByType.get(active.type);
+      const name = catalogItem?.display_name || active.type;
+      showToast(`Moved ${name}`);
+      stopMoving();
+    } else {
+      await cityApi.build(token, active.type, x, y, rotation);
+      const catalogItem = buildingCatalogByType.get(active.type);
+      const name = catalogItem?.display_name || active.type;
+      showToast(`Built ${name}`);
+      stopPlacing();
+    }
     await refreshCity();
   } catch (error) {
     showToast(getErrorMessage(error), true);
@@ -1057,12 +1189,12 @@ function renderBuildPanel(container) {
 
   const buildBtn = document.createElement("button");
   buildBtn.className = "btn";
-  buildBtn.textContent = placing ? "Placing..." : "Build";
+  buildBtn.textContent = getActivePlacement() ? "Placing..." : "Build";
   buildBtn.disabled =
     !selectedBuildType ||
     !Number.isFinite(cost) ||
     state.city.gold < cost ||
-    placing;
+    Boolean(getActivePlacement());
   buildBtn.addEventListener("click", () => {
     if (!selectedBuildType) return;
     startPlacing(selectedBuildType);
@@ -1089,6 +1221,7 @@ function renderUpgradePanel(container, building) {
     upgradeBtn.disabled = true;
     upgradeBtn.title = "Max level reached";
     container.appendChild(upgradeBtn);
+    addMoveButton(container, building);
     return;
   }
 
@@ -1117,6 +1250,17 @@ function renderUpgradePanel(container, building) {
   }
   upgradeBtn.addEventListener("click", () => handleUpgrade(building));
   container.appendChild(upgradeBtn);
+  addMoveButton(container, building);
+}
+
+function addMoveButton(container, building) {
+  const moveBtn = document.createElement("button");
+  moveBtn.className = "btn ghost";
+  moveBtn.type = "button";
+  moveBtn.textContent = "Move";
+  moveBtn.disabled = Boolean(getActivePlacement());
+  moveBtn.addEventListener("click", () => startMoving(building));
+  container.appendChild(moveBtn);
 }
 
 function getBuildCost(type, level) {

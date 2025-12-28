@@ -120,6 +120,14 @@ export const cityApi = {
     return apiPost("/city/upgrade", { x, y }, { Authorization: `Bearer ${token}` });
   },
 
+  async move(token, buildingId, x, y, rotation = 0) {
+    return apiPost(
+      `/city/buildings/${buildingId}/move`,
+      { x, y, rotation },
+      { Authorization: `Bearer ${token}` }
+    );
+  },
+
   async catalog(token) {
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
     return apiGet("/city/buildings/catalog", headers);

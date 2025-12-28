@@ -781,6 +781,11 @@ body.map-first .grid-viewport.placing-invalid {
   z-index: 2;
 }
 
+.tile .building.moving-source {
+  opacity: 0.55;
+  filter: grayscale(0.4);
+}
+
 .tile .shadow {
   position: absolute;
   left: 50%;
