@@ -225,6 +225,10 @@ body.map-first .sidebar {
   z-index: var(--z-hud);
 }
 
+body.map-first .city-header {
+  left: 220px;
+}
+
 .side-nav {
   display: grid;
   gap: 12px;
