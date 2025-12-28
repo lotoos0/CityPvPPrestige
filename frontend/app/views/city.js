@@ -1330,6 +1330,7 @@ async function handleUpgrade(building) {
 
 async function handleStore(building) {
   if (!building) return;
+  stopPlacementMode();
   const catalogItem = buildingCatalogByType.get(building.type);
   const name = catalogItem?.display_name || building.type;
   const confirmed = window.confirm(`Store ${name} L${building.level}?`);
