@@ -503,8 +503,9 @@ def store_building(
 
     db.query(models.BuildingOccupancy).filter(
         models.BuildingOccupancy.building_id == building.id
-    ).delete()
+    ).delete(synchronize_session=False)
     building.is_stored = True
+    db.flush()
     db.commit()
 
     buildings = (

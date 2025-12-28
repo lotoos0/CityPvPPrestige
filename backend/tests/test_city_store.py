@@ -120,6 +120,13 @@ def test_store_building_removes_from_city() -> None:
     assert all(b["id"] != str(building.id) for b in body.get("buildings", []))
     assert get_occupancy_count(building.id) == 0
 
+    response = client.post(
+        "/city/build",
+        json={"type": "house", "x": 1, "y": 1},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 201, response.text
+
     cleanup_test_data(user_id)
 
 
