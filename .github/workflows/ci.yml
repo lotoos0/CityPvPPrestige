@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build and start services
+        run: docker compose up -d --build
+
+      - name: Wait for database
+        run: |
+          for i in {1..30}; do
+            docker compose exec -T db pg_isready -U citypvp && break
+            echo "Waiting for database... ($i/30)"
+            sleep 2
+          done
+          docker compose exec -T db pg_isready -U citypvp
+
+      - name: Install test dependencies
+        run: docker compose exec -T api pip install -r requirements-dev.txt
+
+      - name: Run migrations
+        run: docker compose exec -T api alembic upgrade head
+
+      - name: Run tests
+        run: docker compose exec -T api pytest -v
+
+      - name: Dump logs on failure
+        if: failure()
+        run: docker compose logs --no-color
+
+      - name: Cleanup
+        if: always()
+        run: docker compose down -v
