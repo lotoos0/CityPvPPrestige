@@ -2,7 +2,7 @@
 
 Revision ID: 0010_building_storage_flag
 Revises: 0009_building_rotation
-Create Date: 2025-01-XX
+Create Date: 2025-12-28 21:07:53.908253
 """
 
 from alembic import op

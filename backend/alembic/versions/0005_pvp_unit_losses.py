@@ -2,7 +2,7 @@
 
 Revision ID: 0005_pvp_unit_losses
 Revises: 0004_units_barracks
-Create Date: 2025-01-01 00:00:00.000000
+Create Date: 2025-12-23 08:50:14.034470
 
 """
 from typing import Sequence, Union

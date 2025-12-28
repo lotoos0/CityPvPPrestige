@@ -2,7 +2,7 @@
 
 Revision ID: 0008_town_hall_singleton
 Revises: 0007_building_occupancy
-Create Date: 2024-12-24 00:10:00.000000
+Create Date: 2025-12-27 09:35:30.868288
 
 """
 from typing import Sequence, Union
