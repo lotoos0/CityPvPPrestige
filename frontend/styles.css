@@ -570,6 +570,24 @@ body.map-first .hud::-webkit-scrollbar-thumb {
   min-height: 40px;
 }
 
+.inventory-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  font-size: 13px;
+}
+
+.inventory-meta {
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .bad {
   color: #ff6b6b;
 }

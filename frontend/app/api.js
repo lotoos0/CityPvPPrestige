@@ -108,10 +108,10 @@ export const cityApi = {
     return apiPost("/city/collect", {}, { Authorization: `Bearer ${token}` });
   },
 
-  async build(token, type, x, y, rotation = 0) {
+  async build(token, type, x, y, rotation = 0, storedId = null) {
     return apiPost(
       "/city/build",
-      { type, x, y, rotation },
+      { type, x, y, rotation, stored_id: storedId },
       { Authorization: `Bearer ${token}` }
     );
   },
@@ -135,6 +135,10 @@ export const cityApi = {
   async catalog(token) {
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
     return apiGet("/city/buildings/catalog", headers);
+  },
+
+  async stored(token) {
+    return apiGet("/city/buildings/stored", { Authorization: `Bearer ${token}` });
   },
 };
 

@@ -15,6 +15,7 @@ let buildingCatalog = [];
 let buildingCatalogByType = new Map();
 let selectedBuildType = "";
 let catalogLoaded = false;
+let storedBuildings = [];
 const BASE_GOLD_CAP = 200;
 const TILE_WIDTH = 128;
 const TILE_HEIGHT = 64;
@@ -177,17 +178,20 @@ async function ensureCatalog(token) {
 async function refreshCity() {
   const token = getToken();
   try {
-    const [city, stats, user] = await Promise.all([
+    const [city, stats, user, stored] = await Promise.all([
       cityApi.fetch(token),
       statsApi.fetch(token),
       authApi.me(token),
+      cityApi.stored(token),
     ]);
 
     state.setState({ city, user });
+    storedBuildings = stored?.items || [];
     renderStats(city);
     renderCombat(stats);
     renderGrid(city);
     renderTilePanel();
+    renderInventory();
     return city;
   } catch (error) {
     showToast(error.message || "Failed to load city", true);
@@ -508,12 +512,47 @@ function onGridPointerMove(event) {
     tile.y,
     getPlacementSize(active),
     active.mode === "move" ? active.id : null,
-    active.mode === "move",
+    active.mode === "move" || Boolean(active.sourceStoredId),
   );
   ghostTile = { x: tile.x, y: tile.y, valid: status.ok, reason: status.reason };
   updatePlacementCursor(status.ok);
   renderGhost();
   renderTilePanel();
+}
+
+function renderInventory() {
+  const list = document.getElementById("inventoryList");
+  if (!list) return;
+  list.innerHTML = "";
+  if (!storedBuildings.length) {
+    list.textContent = "No stored buildings.";
+    return;
+  }
+  storedBuildings.forEach((item) => {
+    const row = document.createElement("div");
+    row.className = "inventory-item";
+    const label = document.createElement("div");
+    label.textContent = `${item.type.replace("_", " ").toUpperCase()} L${item.level}`;
+    const displaySize =
+      item.rotation === 90 && item.size.w !== item.size.h
+        ? { w: item.size.h, h: item.size.w }
+        : item.size;
+    const meta = document.createElement("div");
+    meta.className = "inventory-meta";
+    meta.textContent = `${displaySize.w}x${displaySize.h}`;
+    const actions = document.createElement("div");
+    const placeBtn = document.createElement("button");
+    placeBtn.className = "btn ghost";
+    placeBtn.type = "button";
+    placeBtn.textContent = "Place";
+    placeBtn.disabled = Boolean(getActivePlacement());
+    placeBtn.addEventListener("click", () => startPlacingFromStored(item));
+    actions.appendChild(placeBtn);
+    row.appendChild(label);
+    row.appendChild(meta);
+    row.appendChild(actions);
+    list.appendChild(row);
+  });
 }
 
 function getTileFromPoint(clientX, clientY) {
@@ -640,10 +679,11 @@ function renderTilePanel() {
     title.textContent = "Placing";
     body.innerHTML = "";
     const placementSize = getPlacementSize();
+    const placementLabel = placing.sourceStoredId ? "stored" : "new";
 
     const mode = document.createElement("div");
     mode.className = "status";
-    mode.textContent = `Placing: ${name} (${placementSize.w}x${placementSize.h})`;
+    mode.textContent = `Placing: ${name} (${placementSize.w}x${placementSize.h}) · ${placementLabel}`;
     body.appendChild(mode);
 
     const rotation = document.createElement("div");
@@ -843,7 +883,7 @@ function getFootprintPolygonPoints(size) {
 function startPlacing(type) {
   if (!type) return;
   if (moving) stopMoving();
-  placing = { mode: "place", type, size: getFootprintSize(type), rotated: false };
+  placing = { mode: "place", type, size: getFootprintSize(type), rotated: false, sourceStoredId: null, level: 1 };
   let seed = null;
   if (lastPointer) {
     seed = getTileFromPointIso(lastPointer.x, lastPointer.y);
@@ -860,6 +900,42 @@ function startPlacing(type) {
     updatePlacementCursor(null);
   }
   renderGhost();
+}
+
+function startPlacingFromStored(item) {
+  if (!item) return;
+  if (moving) stopMoving();
+  placing = {
+    mode: "place",
+    type: item.type,
+    size: item.size,
+    rotated: item.rotation === 90,
+    sourceStoredId: item.id,
+    level: item.level,
+  };
+  let seed = null;
+  if (lastPointer) {
+    seed = getTileFromPointIso(lastPointer.x, lastPointer.y);
+  }
+  if (!seed && selectedTile) {
+    seed = { x: selectedTile.x, y: selectedTile.y };
+  }
+  if (seed) {
+    const status = getPlacementStatus(
+      seed.x,
+      seed.y,
+      getPlacementSize(placing),
+      null,
+      true,
+    );
+    ghostTile = { x: seed.x, y: seed.y, valid: status.ok, reason: status.reason };
+    updatePlacementCursor(status.ok);
+  } else {
+    ghostTile = null;
+    updatePlacementCursor(null);
+  }
+  renderGhost();
+  renderTilePanel();
 }
 
 function stopPlacing() {
@@ -968,7 +1044,7 @@ function renderGhost() {
     ghost.appendChild(marker);
   }
 
-  const spriteLevel = active.mode === "move" ? active.level : 1;
+  const spriteLevel = active.level || 1;
   const sprite = getSpritePath(type, spriteLevel);
   if (sprite) {
     const img = document.createElement("img");
@@ -1046,7 +1122,7 @@ async function attemptPlaceAt(x, y) {
     y,
     getPlacementSize(active),
     active.mode === "move" ? active.id : null,
-    active.mode === "move",
+    active.mode === "move" || Boolean(active.sourceStoredId),
   );
   if (!status.ok) {
     showToast(status.reason || "Cannot place here.", true);
@@ -1062,7 +1138,7 @@ async function attemptPlaceAt(x, y) {
       showToast(`Moved ${name}`);
       stopMoving();
     } else {
-      await cityApi.build(token, active.type, x, y, rotation);
+      await cityApi.build(token, active.type, x, y, rotation, active.sourceStoredId);
       const catalogItem = buildingCatalogByType.get(active.type);
       const name = catalogItem?.display_name || active.type;
       showToast(`Built ${name}`);
