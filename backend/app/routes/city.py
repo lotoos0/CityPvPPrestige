@@ -151,7 +151,32 @@ def build(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    normalized_type = normalize_building_type(payload.type)
+    city = get_or_create_city(db, current_user)
+    stored_building = None
+    if payload.stored_id:
+        stored_building = (
+            db.query(models.Building)
+            .filter(
+                models.Building.id == payload.stored_id,
+                models.Building.city_id == city.id,
+                models.Building.is_stored.is_(True),
+            )
+            .first()
+        )
+        if not stored_building:
+            return JSONResponse(
+                status_code=404,
+                content={
+                    "error": {
+                        "code": "NOT_FOUND",
+                        "message": "Stored building not found.",
+                    }
+                },
+            )
+        normalized_type = stored_building.type
+    else:
+        normalized_type = normalize_building_type(payload.type)
+
     if normalized_type not in ALLOWED_MVP_BUILDING_TYPES:
         return JSONResponse(
             status_code=400,
@@ -162,8 +187,6 @@ def build(
                 }
             },
         )
-
-    city = get_or_create_city(db, current_user)
 
     buildings = (
         db.query(models.Building)
@@ -257,65 +280,108 @@ def build(
                 )
             occupied_tiles.append((tile_x, tile_y))
 
-    build_cost = get_build_cost(normalized_type, 1)
-    if build_cost is None:
-        raise HTTPException(status_code=400, detail="Invalid building configuration")
-
-    locked_city = (
-        db.query(models.City)
-        .filter(models.City.id == city.id)
-        .with_for_update()
-        .first()
-    )
-    if not locked_city:
-        raise HTTPException(status_code=404, detail="City not found")
-
-    if locked_city.gold < build_cost:
-        return JSONResponse(
-            status_code=403,
-            content={
-                "error": {
-                    "code": "INSUFFICIENT_GOLD",
-                    "message": "Not enough gold to build.",
-                }
-            },
-        )
-
-    locked_city.gold -= build_cost
-
-    building = models.Building(
-        city_id=city.id,
-        type=normalized_type,
-        level=1,
-        x=payload.x,
-        y=payload.y,
-        rotation=rotation,
-    )
-    db.add(building)
-    try:
-        db.flush()
-        occupancy_rows = [
-            models.BuildingOccupancy(
-                city_id=city.id,
-                building_id=building.id,
-                x=tile_x,
-                y=tile_y,
+    if stored_building:
+        if stored_building.type == "town_hall":
+            return JSONResponse(
+                status_code=409,
+                content={
+                    "error": {
+                        "code": "TOWN_HALL_LOCKED",
+                        "message": "Town Hall cannot be stored.",
+                    }
+                },
             )
-            for tile_x, tile_y in occupied_tiles
-        ]
-        db.add_all(occupancy_rows)
-        db.commit()
-    except IntegrityError:
-        db.rollback()
-        return JSONResponse(
-            status_code=409,
-            content={
-                "error": {
-                    "code": "TILE_OCCUPIED",
-                    "message": "Tile already occupied.",
-                }
-            },
+        try:
+            db.query(models.BuildingOccupancy).filter(
+                models.BuildingOccupancy.building_id == stored_building.id
+            ).delete(synchronize_session=False)
+            stored_building.x = payload.x
+            stored_building.y = payload.y
+            stored_building.rotation = rotation
+            stored_building.is_stored = False
+            db.flush()
+            occupancy_rows = [
+                models.BuildingOccupancy(
+                    city_id=city.id,
+                    building_id=stored_building.id,
+                    x=tile_x,
+                    y=tile_y,
+                )
+                for tile_x, tile_y in occupied_tiles
+            ]
+            db.add_all(occupancy_rows)
+            db.commit()
+        except IntegrityError:
+            db.rollback()
+            return JSONResponse(
+                status_code=409,
+                content={
+                    "error": {
+                        "code": "TILE_OCCUPIED",
+                        "message": "Tile already occupied.",
+                    }
+                },
+            )
+    else:
+        build_cost = get_build_cost(normalized_type, 1)
+        if build_cost is None:
+            raise HTTPException(status_code=400, detail="Invalid building configuration")
+
+        locked_city = (
+            db.query(models.City)
+            .filter(models.City.id == city.id)
+            .with_for_update()
+            .first()
         )
+        if not locked_city:
+            raise HTTPException(status_code=404, detail="City not found")
+
+        if locked_city.gold < build_cost:
+            return JSONResponse(
+                status_code=403,
+                content={
+                    "error": {
+                        "code": "INSUFFICIENT_GOLD",
+                        "message": "Not enough gold to build.",
+                    }
+                },
+            )
+
+        locked_city.gold -= build_cost
+
+        building = models.Building(
+            city_id=city.id,
+            type=normalized_type,
+            level=1,
+            x=payload.x,
+            y=payload.y,
+            rotation=rotation,
+        )
+        db.add(building)
+        try:
+            db.flush()
+            occupancy_rows = [
+                models.BuildingOccupancy(
+                    city_id=city.id,
+                    building_id=building.id,
+                    x=tile_x,
+                    y=tile_y,
+                )
+                for tile_x, tile_y in occupied_tiles
+            ]
+            db.add_all(occupancy_rows)
+            db.commit()
+        except IntegrityError:
+            db.rollback()
+            return JSONResponse(
+                status_code=409,
+                content={
+                    "error": {
+                        "code": "TILE_OCCUPIED",
+                        "message": "Tile already occupied.",
+                    }
+                },
+            )
 
     buildings = (
         db.query(models.Building)
@@ -635,7 +701,10 @@ def upgrade(
 
     buildings = (
         db.query(models.Building)
-        .filter(models.Building.city_id == city.id)
+        .filter(
+            models.Building.city_id == city.id,
+            models.Building.is_stored.is_(False),
+        )
         .all()
     )
 
@@ -679,3 +748,32 @@ def get_buildings_catalog():
         )
 
     return schemas.BuildingCatalogResponse(items=items)
+
+
+@router.get("/buildings/stored", response_model=schemas.StoredBuildingsResponse)
+def get_stored_buildings(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    city = get_or_create_city(db, current_user)
+    buildings = (
+        db.query(models.Building)
+        .filter(
+            models.Building.city_id == city.id,
+            models.Building.is_stored.is_(True),
+        )
+        .all()
+    )
+    items: list[schemas.StoredBuildingOut] = []
+    for building in buildings:
+        footprint = BUILDING_FOOTPRINTS.get(building.type, {"w": 1, "h": 1})
+        items.append(
+            schemas.StoredBuildingOut(
+                id=building.id,
+                type=building.type,
+                level=building.level,
+                rotation=building.rotation or 0,
+                size=footprint,
+            )
+        )
+    return schemas.StoredBuildingsResponse(items=items)

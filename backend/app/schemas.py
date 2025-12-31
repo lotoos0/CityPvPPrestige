@@ -49,6 +49,7 @@ class BuildRequest(BaseModel):
     x: int
     y: int
     rotation: int = 0
+    stored_id: Optional[UUID] = None
 
 
 class MoveRequest(BaseModel):
@@ -77,6 +78,19 @@ class BuildingCatalogItem(BaseModel):
 
 class BuildingCatalogResponse(BaseModel):
     items: list[BuildingCatalogItem]
+
+
+class StoredBuildingOut(BaseModel):
+    id: UUID
+    type: str
+    level: int
+    rotation: int = 0
+    size: dict[str, int]
+    model_config = ConfigDict(from_attributes=True)
+
+
+class StoredBuildingsResponse(BaseModel):
+    items: list[StoredBuildingOut]
 
 
 class StatsOut(BaseModel):
