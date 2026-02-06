@@ -438,6 +438,16 @@ body.map-first .hud .card {
   pointer-events: auto;
 }
 
+#inventory-card {
+  position: relative;
+  z-index: var(--z-hud);
+  pointer-events: auto;
+}
+
+#inventory-card * {
+  pointer-events: auto;
+}
+
 .hud-toggle {
   align-self: start;
   justify-self: end;

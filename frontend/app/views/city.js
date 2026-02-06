@@ -545,8 +545,10 @@ function renderInventory() {
     placeBtn.className = "btn ghost";
     placeBtn.type = "button";
     placeBtn.textContent = "Place";
-    placeBtn.disabled = Boolean(getActivePlacement());
-    placeBtn.addEventListener("click", () => startPlacingFromStored(item));
+    placeBtn.addEventListener("click", () => {
+      if (getActivePlacement()) stopPlacementMode();
+      startPlacingFromStored(item);
+    });
     actions.appendChild(placeBtn);
     row.appendChild(label);
     row.appendChild(meta);
@@ -884,6 +886,7 @@ function startPlacing(type) {
   if (!type) return;
   if (moving) stopMoving();
   placing = { mode: "place", type, size: getFootprintSize(type), rotated: false, sourceStoredId: null, level: 1 };
+  renderInventory();
   let seed = null;
   if (lastPointer) {
     seed = getTileFromPointIso(lastPointer.x, lastPointer.y);
@@ -913,6 +916,7 @@ function startPlacingFromStored(item) {
     sourceStoredId: item.id,
     level: item.level,
   };
+  renderInventory();
   let seed = null;
   if (lastPointer) {
     seed = getTileFromPointIso(lastPointer.x, lastPointer.y);
@@ -946,6 +950,7 @@ function stopPlacing() {
   selectedBuildType = "";
   renderGrid(state.city);
   renderTilePanel();
+  renderInventory();
 }
 
 function startMoving(building) {
@@ -959,6 +964,7 @@ function startMoving(building) {
     size: getFootprintSize(building.type),
     rotated: (building.rotation || 0) === 90,
   };
+  renderInventory();
   let seed = null;
   if (lastPointer) {
     seed = getTileFromPointIso(lastPointer.x, lastPointer.y);
@@ -985,6 +991,7 @@ function stopMoving() {
   updatePlacementCursor(null);
   renderGrid(state.city);
   renderTilePanel();
+  renderInventory();
 }
 
 function stopPlacementMode() {
