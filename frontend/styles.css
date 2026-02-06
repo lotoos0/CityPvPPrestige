@@ -593,6 +593,25 @@ body.map-first .hud::-webkit-scrollbar-thumb {
   font-size: 13px;
 }
 
+.inv-thumb {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+  border-radius: 8px;
+  border: 1px solid rgba(245, 159, 0, 0.25);
+  background: rgba(10, 14, 22, 0.6);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.inventory-item.is-active {
+  border-color: rgba(64, 176, 255, 0.9);
+  box-shadow: 0 0 0 2px rgba(64, 176, 255, 0.25);
+}
+
+.inventory--placing .inventory-item.is-dim {
+  opacity: 0.55;
+}
+
 .inventory-meta {
   color: var(--muted);
   font-size: 12px;

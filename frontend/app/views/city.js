@@ -524,6 +524,9 @@ function renderInventory() {
   const list = document.getElementById("inventoryList");
   if (!list) return;
   list.innerHTML = "";
+  const activePlacement = getActivePlacement();
+  const activeStoredId = placing?.sourceStoredId || null;
+  list.classList.toggle("inventory--placing", Boolean(activePlacement));
   if (!storedBuildings.length) {
     list.textContent = "No stored buildings.";
     return;
@@ -531,6 +534,17 @@ function renderInventory() {
   storedBuildings.forEach((item) => {
     const row = document.createElement("div");
     row.className = "inventory-item";
+    if (activeStoredId && item.id === activeStoredId) {
+      row.classList.add("is-active");
+    } else if (activePlacement) {
+      row.classList.add("is-dim");
+    }
+    row.addEventListener("click", () => startPlacingFromStored(item));
+    const thumb = document.createElement("img");
+    thumb.className = "inv-thumb";
+    const thumbSrc = getSpritePath(item.type, item.level);
+    if (thumbSrc) thumb.src = thumbSrc;
+    thumb.alt = `${item.type} preview`;
     const label = document.createElement("div");
     label.textContent = `${item.type.replace("_", " ").toUpperCase()} L${item.level}`;
     const displaySize =
@@ -539,17 +553,19 @@ function renderInventory() {
         : item.size;
     const meta = document.createElement("div");
     meta.className = "inventory-meta";
-    meta.textContent = `${displaySize.w}x${displaySize.h}`;
+    meta.textContent = `${displaySize.w}x${displaySize.h}${item.rotation === 90 ? " · rot 90°" : ""}`;
     const actions = document.createElement("div");
     const placeBtn = document.createElement("button");
     placeBtn.className = "btn ghost";
     placeBtn.type = "button";
     placeBtn.textContent = "Place";
-    placeBtn.addEventListener("click", () => {
+    placeBtn.addEventListener("click", (event) => {
+      event.stopPropagation();
       if (getActivePlacement()) stopPlacementMode();
       startPlacingFromStored(item);
     });
     actions.appendChild(placeBtn);
+    row.appendChild(thumb);
     row.appendChild(label);
     row.appendChild(meta);
     row.appendChild(actions);
